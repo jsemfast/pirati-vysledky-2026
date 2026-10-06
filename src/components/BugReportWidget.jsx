@@ -131,8 +131,9 @@ export default function BugReportWidget({ raised = false }) {
         }
     };
 
+    // stejné přepnutí na mobilní rozložení jako CouncilApp (i telefon na šířku)
     const position = raised
-        ? 'right-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-9'
+        ? 'right-3 bottom-9 mobile:bottom-[calc(4.5rem+env(safe-area-inset-bottom))] short:bottom-[calc(3.25rem+env(safe-area-inset-bottom))]'
         : 'right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))]';
 
     return (

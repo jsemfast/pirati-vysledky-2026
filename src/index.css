@@ -9,6 +9,11 @@
   --color-pirate: #fec900;
 }
 
+/* Mobilní rozložení — stejný dotaz jako MOBILE_QUERY v src/hooks/useIsMobile.js
+   (úzký displej nebo telefon na šířku). `short:` = nízký displej na šířku. */
+@custom-variant mobile (@media (max-width: 767px), (pointer: coarse) and (max-height: 500px));
+@custom-variant short (@media (pointer: coarse) and (max-height: 500px));
+
 html,
 body,
 #root {
@@ -33,7 +38,7 @@ body {
 }
 
 /* iOS zoomuje na inputy s písmem < 16px — na mobilu je držíme na 16px */
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   input,
   select,
   textarea {

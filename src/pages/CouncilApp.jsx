@@ -352,13 +352,13 @@ export default function CouncilApp({ council }) {
                             <button
                                 key={t.id}
                                 onClick={() => switchTab(t.id)}
-                                className={`flex flex-col items-center gap-0.5 py-2 font-condensed text-[11px] font-bold ${activeTab === t.id ? 'text-black' : 'text-neutral-400'}`}
+                                className={`flex flex-col items-center gap-0.5 py-2 font-condensed text-[11px] font-bold short:flex-row short:justify-center short:gap-1.5 short:py-1.5 short:text-xs ${activeTab === t.id ? 'text-black' : 'text-neutral-400'}`}
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={ICONS[t.id]} />
                                 </svg>
                                 {t.label}
-                                <span className={`h-0.5 w-6 rounded-full ${activeTab === t.id ? 'bg-[#FEC900]' : 'bg-transparent'}`} />
+                                <span className={`h-0.5 w-6 rounded-full short:hidden ${activeTab === t.id ? 'bg-[#FEC900]' : 'bg-transparent'}`} />
                             </button>
                         ))}
                     </nav>

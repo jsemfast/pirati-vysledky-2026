@@ -165,10 +165,10 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
 
     return (
         <header className="bg-black text-white shrink-0 z-[1200] relative">
-            <div className="px-4 pt-3 pb-2.5 md:px-5">
+            <div className="px-4 pt-3 pb-2.5 md:px-5 short:pt-1.5 short:pb-1.5">
                 <div className="flex items-center gap-3">
                     <a href={demo ? '/?demo' : '/'} className="shrink-0" aria-label="Přehled zastupitelstev">
-                        <img src="/brand/logo-full-white.svg" alt="Piráti" className="h-6 sm:h-7 md:h-8" />
+                        <img src="/brand/logo-full-white.svg" alt="Piráti" className="h-6 sm:h-7 md:h-8 short:h-6" />
                     </a>
                     <div className="min-w-0 flex-1 border-l border-white/20 pl-3">
                         <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
                                 <span className="hidden sm:inline">Komunální volby 2026 · </span>{council?.seats} mandátů
                             </span>
                         </div>
-                        <h1 className="font-display text-2xl md:text-3xl leading-none tracking-wide truncate mt-0.5">
+                        <h1 className="font-display text-2xl md:text-3xl short:text-2xl leading-none tracking-wide truncate mt-0.5">
                             {council?.name}<span className="hidden sm:inline"> <span className="text-[#FEC900]">·</span> výsledky</span>
                         </h1>
                     </div>
@@ -185,7 +185,7 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
                     <CouncilMenu demo={demo} />
                 </div>
 
-                <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-white/70">
+                <div className="mt-2 short:mt-1 flex items-center justify-between gap-3 text-[11px] text-white/70">
                     <span className="truncate">{line}</span>
                     <span className="shrink-0 tabular-nums text-white/45 sm:hidden">{live.lastSuccess ? fmtShortTime(live.lastSuccess) : ''}</span>
                     <span className="hidden sm:inline shrink-0 tabular-nums text-white/45" title={dataTime ? `Data ČSÚ vygenerována ${fmtTime(dataTime)}` : undefined}>
