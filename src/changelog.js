@@ -8,6 +8,22 @@
 
 export const CHANGELOG = [
     {
+        version: '1.4.0',
+        date: '2026-10-06',
+        title: 'Pohodlnější ovládání na mobilu',
+        items: [
+            { type: 'fixed', text: 'Karty městských částí na přehledu se vejdou na šířku telefonu — počet mandátů byl mimo obrazovku' },
+            { type: 'fixed', text: 'Menu zastupitelstev přes celou obrazovku, s odkazem zpět na přehled nahoře a rovnou u aktuální MČ' },
+            { type: 'improved', text: 'Telefon na šířku dostane mobilní rozložení se spodní lištou místo stísněné desktopové verze' },
+            { type: 'improved', text: 'Detail okrsku nezakryje vybraný okrsek, zavře se klepnutím do mapy; klepnutí na stranu ji ukáže na mapě' },
+            { type: 'improved', text: 'Větší tlačítka a odkazy pro prst, křesla v půlkruhu jde vybrat i přejetím prstem' },
+            { type: 'improved', text: 'Záložky si pamatují, kam jsi odroloval/a; otevřená záložka a okrsek přežijí obnovení stránky' },
+            { type: 'improved', text: 'Brouk při rolování uhne a nezakrývá čísla; čitelnější drobný text' },
+            { type: 'improved', text: 'Přehled se načte zhruba čtyřikrát rychleji — mapa se stahuje, až když je potřeba' },
+            { type: 'improved', text: 'Během volebního večera se po aktualizaci novinky neotevírají přes výsledky' },
+        ],
+    },
+    {
         version: '1.3.0',
         date: '2026-10-06',
         title: 'Nahlášení chyby',
