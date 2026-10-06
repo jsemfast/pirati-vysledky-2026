@@ -11,7 +11,7 @@ import { countdown, fmtPct, fmtShortTime, fmtTime, parseCsuTime } from '../volby
 import { PrecinctStrip } from './Precincts';
 
 export function StatusPill({ phase, demo, stale }) {
-    const base = 'font-condensed rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wider';
+    const base = 'font-condensed rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wider whitespace-nowrap shrink-0';
     if (demo) return <span className={`${base} bg-[#FEC900] text-black`}>DEMO</span>;
     if (stale) return <span className={`${base} bg-orange-500 text-white`}>OFFLINE</span>;
     if (phase === 'final') return <span className={`${base} bg-emerald-500 text-white`}>KONEČNÉ</span>;
@@ -168,17 +168,27 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
             <div className="px-4 pt-3 pb-2.5 md:px-5 short:pt-1.5 short:pb-1.5">
                 <div className="flex items-center gap-3">
                     <a href={demo ? '/?demo' : '/'} className="shrink-0 py-2.5 -my-2.5" aria-label="Přehled zastupitelstev">
-                        <img src="/brand/logo-full-white.svg" alt="Piráti" className="h-6 sm:h-7 md:h-8 short:h-6" />
+                        {/* pod 360 px (iPhone SE) jen vlajka — celé logo by vytlačilo název MČ */}
+                        <picture>
+                            <source media="(max-width: 359px)" srcSet="/brand/favicon.svg" />
+                            <img src="/brand/logo-full-white.svg" alt="Piráti" className="h-6 sm:h-7 md:h-8 short:h-6" />
+                        </picture>
                     </a>
                     <div className="min-w-0 flex-1 border-l border-white/20 pl-3">
                         <div className="flex items-center gap-2">
                             <StatusPill phase={phase} demo={demo} stale={live.stale} />
-                            <span className="font-condensed text-[11px] uppercase tracking-wider text-white/50 truncate">
-                                <span className="hidden sm:inline">Komunální volby 2026 · </span>{council?.seats} mandátů
+                            {/* na telefonu se vedle štítku stavu nevejde (useklo by se na „23 MANDÁ…“);
+                                počet mandátů je i v půlkruhu a v menu */}
+                            <span className="hidden sm:inline font-condensed text-[11px] uppercase tracking-wider text-white/50 truncate">
+                                Komunální volby 2026 · {council?.seats} mandátů
                             </span>
                         </div>
                         <h1 className="font-display text-2xl md:text-3xl short:text-2xl leading-none tracking-wide truncate mt-0.5">
-                            {council?.name}<span className="hidden sm:inline"> <span className="text-[#FEC900]">·</span> výsledky</span>
+                            {/* na telefonu bez „Praha-“, jinak se dlouhé MČ (Dolní Počernice) useknou */}
+                            <span className={`sm:hidden ${(council?.name.replace(/^Praha-/, '').length || 0) > 12 ? 'text-xl' : ''}`}>
+                                {council?.name.replace(/^Praha-/, '')}
+                            </span>
+                            <span className="hidden sm:inline">{council?.name} <span className="text-[#FEC900]">·</span> výsledky</span>
                         </h1>
                     </div>
                     <RefreshButton live={live} now={now} demo={demo} />
