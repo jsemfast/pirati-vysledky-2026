@@ -122,7 +122,7 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                 })}
             </div>
             {many && (
-                <button onClick={() => setShowAll((v) => !v)} className="mt-2 text-xs font-semibold text-black hover:underline">
+                <button onClick={() => setShowAll((v) => !v)} className="mt-1 py-2.5 text-sm font-semibold text-black hover:underline">
                     {showAll ? 'Skrýt menší kandidátky' : `Zobrazit všech ${parties.length} kandidátek`}
                 </button>
             )}

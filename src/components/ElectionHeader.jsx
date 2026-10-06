@@ -42,7 +42,7 @@ export function RefreshButton({ live, now, demo = false, showLabel = 'hidden sm:
     return (
         <button
             onClick={onClick}
-            className={`relative flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+            className={`relative flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-11 min-w-11 text-xs font-semibold transition-colors ${
                 blocked ? 'text-white/45 cursor-not-allowed' : 'text-white/80 hover:text-white hover:bg-white/10'
             }`}
             aria-label={blocked ? `Obnovit půjde za ${fmtWait(nextIn)}` : 'Obnovit výsledky'}
@@ -69,7 +69,7 @@ function CouncilMenu({ demo }) {
             <button
                 onClick={() => setOpen(true)}
                 aria-label="Vybrat zastupitelstvo"
-                className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10"
+                className="p-2.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10"
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -117,7 +117,7 @@ function CouncilMenu({ demo }) {
                                     <a
                                         key={c.slug}
                                         href={`/${c.slug}${demo ? '?demo' : ''}`}
-                                        className={`truncate rounded-lg px-3 py-1.5 text-sm ${c.slug === current?.slug ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                                        className={`truncate rounded-lg px-3 py-2.5 text-sm ${c.slug === current?.slug ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-700'}`}
                                     >
                                         {c.name.replace(/^Praha-/, '')}
                                     </a>
@@ -139,7 +139,7 @@ function CouncilMenu({ demo }) {
                             Data: ČSÚ (volby.gov.cz). Loga a část fotek: programydovoleb.cz. Mandáty do vyhlášení ČSÚ = odhad.
                             <div className="mt-2 flex items-center justify-between text-xs">
                                 <span>Verze {APP_VERSION}</span>
-                                <button onClick={openChangelog} className="font-semibold text-black hover:underline">Co je nové</button>
+                                <button onClick={openChangelog} className="py-2 -my-2 font-semibold text-black hover:underline">Co je nové</button>
                             </div>
                         </div>
                     </div>
@@ -167,7 +167,7 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
         <header className="bg-black text-white shrink-0 z-[1200] relative">
             <div className="px-4 pt-3 pb-2.5 md:px-5 short:pt-1.5 short:pb-1.5">
                 <div className="flex items-center gap-3">
-                    <a href={demo ? '/?demo' : '/'} className="shrink-0" aria-label="Přehled zastupitelstev">
+                    <a href={demo ? '/?demo' : '/'} className="shrink-0 py-2.5 -my-2.5" aria-label="Přehled zastupitelstev">
                         <img src="/brand/logo-full-white.svg" alt="Piráti" className="h-6 sm:h-7 md:h-8 short:h-6" />
                     </a>
                     <div className="min-w-0 flex-1 border-l border-white/20 pl-3">

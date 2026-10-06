@@ -113,7 +113,7 @@ export default function UpdateManager() {
                             <span>Je k dispozici nová verze {newVersion}.</span>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="shrink-0 bg-[#FEC900] text-black text-xs font-bold rounded-lg px-3 py-1.5"
+                                className="shrink-0 bg-[#FEC900] text-black text-sm font-bold rounded-lg px-3 py-2"
                             >
                                 Obnovit
                             </button>

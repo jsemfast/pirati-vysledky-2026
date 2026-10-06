@@ -235,7 +235,7 @@ export default function BugReportWidget({ raised = false }) {
                                                     setScreenshot(null);
                                                     if (fileRef.current) fileRef.current.value = '';
                                                 }}
-                                                className="absolute top-1.5 right-1.5 rounded-full bg-black/80 text-white text-xs px-2 py-0.5"
+                                                className="absolute top-1.5 right-1.5 rounded-full bg-black/80 text-white text-sm px-3 py-1.5"
                                             >
                                                 Odebrat
                                             </button>

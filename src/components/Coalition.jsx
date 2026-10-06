@@ -233,8 +233,8 @@ export default function CoalitionPanel({ model }) {
             <Card className="p-4">
                 <SectionTitle
                     right={council.pirates && (
-                        <label className="flex items-center gap-1.5 text-[11px] text-neutral-500 cursor-pointer">
-                            <input type="checkbox" checked={onlyOurs} onChange={(e) => setOnlyOurs(e.target.checked)} className="accent-[#000000]" />
+                        <label className="flex items-center gap-2 py-2.5 -my-2.5 pl-3 text-xs text-neutral-600 cursor-pointer">
+                            <input type="checkbox" checked={onlyOurs} onChange={(e) => setOnlyOurs(e.target.checked)} className="w-4 h-4 accent-[#000000]" />
                             jen s Piráty
                         </label>
                     )}

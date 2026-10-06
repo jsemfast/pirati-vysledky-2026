@@ -131,7 +131,7 @@ export default function Councilors({ model }) {
                             )}
 
                             <div className="mt-3 pt-3 border-t border-neutral-100">
-                                <button onClick={() => setShowAll((v) => !v)} className="text-xs font-semibold text-[#000000] hover:underline">
+                                <button onClick={() => setShowAll((v) => !v)} className="py-2.5 -my-2.5 text-sm font-semibold text-[#000000] hover:underline">
                                     {showAll ? 'Skrýt' : 'Zobrazit'} pořadí podle preferenčních hlasů
                                 </button>
                                 {showAll && (

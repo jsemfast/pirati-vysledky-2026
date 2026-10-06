@@ -65,7 +65,7 @@ export function MapControls({ modeId, onMode, partyId, onParty, parties, compact
                     <button
                         key={m.id}
                         onClick={() => onMode(m.id)}
-                        className={`px-2 py-1 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                        className={`rounded-lg font-semibold transition-colors whitespace-nowrap shrink-0 ${compact ? 'px-3 py-2 text-sm' : 'px-2 py-1 text-xs'} ${
                             modeId === m.id ? 'bg-[#000000] text-white' : 'text-neutral-600 hover:bg-neutral-100'
                         }`}
                     >

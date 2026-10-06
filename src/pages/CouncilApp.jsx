@@ -294,7 +294,7 @@ export default function CouncilApp({ council }) {
             {DEMO && (
                 <div className="rounded-xl bg-[#FFF6D1] border border-[#FEC900] text-neutral-900 text-xs px-3 py-2">
                     <b>Demo</b> — simulované sčítání odvozené z výsledků 2022, ne skutečná data ani predikce.{' '}
-                    <a href={`/${council.slug}?demo`} className="underline font-semibold">Spustit znovu</a> · <a href={`/${council.slug}`} className="underline">Skutečné výsledky</a>
+                    <a href={`/${council.slug}?demo`} className="inline-block py-1.5 -my-1.5 underline font-semibold">Spustit znovu</a> · <a href={`/${council.slug}`} className="inline-block py-1.5 -my-1.5 underline">Skutečné výsledky</a>
                 </div>
             )}
             {!council.pirates && (
@@ -320,7 +320,7 @@ export default function CouncilApp({ council }) {
                 } : undefined}
             />
             <Card className="p-4">
-                <SectionTitle right={<button onClick={() => switchTab('councilors')} className="text-[11px] font-semibold text-black hover:underline">Kdo sedí kde →</button>}>
+                <SectionTitle right={<button onClick={() => switchTab('councilors')} className="py-2.5 -my-2.5 pl-3 text-xs font-semibold text-black hover:underline">Kdo sedí kde →</button>}>
                     Rozdělení mandátů
                 </SectionTitle>
                 {council.coalition ? (

@@ -352,7 +352,7 @@ export default function Landing() {
                 {DEMO && (
                     <div className="mb-4 rounded-xl bg-[#FFF6D1] border border-[#FEC900] text-neutral-900 text-xs px-3 py-2">
                         <b>Demo</b> — simulované sčítání odvozené z výsledků 2022, ne skutečná data ani predikce.{' '}
-                        <a href="/?demo" className="underline font-semibold">Spustit znovu</a> · <a href="/" className="underline">Skutečné výsledky</a>
+                        <a href="/?demo" className="inline-block py-1.5 -my-1.5 underline font-semibold">Spustit znovu</a> · <a href="/" className="inline-block py-1.5 -my-1.5 underline">Skutečné výsledky</a>
                     </div>
                 )}
 
@@ -366,7 +366,8 @@ export default function Landing() {
                                 <button
                                     key={id}
                                     onClick={() => setSort(id)}
-                                    className={`px-2.5 py-1 rounded-md ${sort === id ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
+                                    aria-pressed={sort === id}
+                                    className={`px-3 py-2 rounded-md ${sort === id ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
                                 >
                                     {label}
                                 </button>
@@ -419,7 +420,7 @@ export default function Landing() {
                 </section>
                 <footer className="mt-10 pt-4 border-t border-neutral-200 flex items-center justify-between text-xs text-neutral-400">
                     <span>Verze {APP_VERSION} · data ČSÚ (volby.gov.cz)</span>
-                    <button onClick={openChangelog} className="font-semibold text-black hover:underline">Co je nové</button>
+                    <button onClick={openChangelog} className="py-2 -my-2 font-semibold text-black hover:underline">Co je nové</button>
                 </footer>
             </main>
         </div>
