@@ -40,12 +40,14 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                     const below = hasVotes && !p.passed;
                     const selected = selectedParty === p.id;
                     const exact = p.meta.baseline?.exact;
+                    // Bez mapy (Magistrát) klepnutí na stranu nemá co ukázat — pak jen řádek
+                    const Row = onSelectParty ? 'button' : 'div';
                     return (
-                        <button
+                        <Row
                             key={p.id}
-                            onClick={() => onSelectParty?.(p.id)}
-                            className={`w-full text-left rounded-xl px-2.5 py-2 transition-colors ${
-                                ours ? 'bg-[#FFF6D1]' : selected ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+                            {...(onSelectParty ? { type: 'button', onClick: () => onSelectParty(p.id), 'aria-pressed': selected } : {})}
+                            className={`block w-full text-left rounded-xl px-2.5 py-2 transition-colors ${
+                                ours ? 'bg-[#FFF6D1]' : selected ? 'bg-neutral-100' : onSelectParty ? 'hover:bg-neutral-50 active:bg-neutral-100' : ''
                             } ${below ? 'opacity-60' : ''}`}
                         >
                             <div className="flex items-center gap-2">
@@ -115,7 +117,7 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                                     {below && <span className="ml-auto font-semibold text-red-600">pod {threshold} %</span>}
                                 </div>
                             )}
-                        </button>
+                        </Row>
                     );
                 })}
             </div>

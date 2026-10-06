@@ -217,7 +217,8 @@ export default function CouncilApp({ council }) {
 
     const selectPrecinct = (id) => {
         setSelectedId(id);
-        if (isMobile && council.map) switchTab('map');
+        // mapa nemusí být načtená (výpadek okrsky.geojson) — pak zůstat na místě
+        if (isMobile && council.map && statics?.geoJson) switchTab('map');
     };
 
     if (!ready || !model) {
@@ -309,10 +310,14 @@ export default function CouncilApp({ council }) {
             <CoalitionHero model={model} />
             <PartyResults
                 model={model}
-                onSelectParty={(id) => {
+                // Klepnutí na stranu ji ukáže na mapě — na mobilu je mapa ve
+                // vlastní záložce, tak se na ni rovnou přepne
+                selectedParty={mapMode === 'party' ? mapParty : null}
+                onSelectParty={withMap ? (id) => {
                     setMapMode(id === council.pirates ? 'ours' : 'party');
                     setMapParty(id);
-                }}
+                    if (isMobile) switchTab('map');
+                } : undefined}
             />
             <Card className="p-4">
                 <SectionTitle right={<button onClick={() => switchTab('councilors')} className="text-[11px] font-semibold text-black hover:underline">Kdo sedí kde →</button>}>
