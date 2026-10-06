@@ -1,8 +1,9 @@
 // Hlavička výsledkové stránky: stav živých dat, odpočet do další kontroly,
 // ruční obnovení, pruh okrsků a přepínač zastupitelstev.
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNow } from '../hooks/useNow';
+import { useDialog } from '../hooks/useDialog';
 import { APP_VERSION } from '../changelog';
 import { openChangelog } from '../utils/openChangelog';
 import { COUNCILS, POLLS_CLOSE } from '../councils';
@@ -63,12 +64,19 @@ export function RefreshButton({ live, now, demo = false, showLabel = 'hidden sm:
 
 function CouncilMenu({ demo }) {
     const [open, setOpen] = useState(false);
+    const close = useCallback(() => setOpen(false), []);
+    const panelRef = useDialog(open, close);
     const current = activeCouncil();
+    // MČ z druhé půlky seznamu (Praha 11, Zbraslav…) by byla až pod ohybem
+    useEffect(() => {
+        if (open) panelRef.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'center' });
+    }, [open, panelRef]);
     return (
         <>
             <button
                 onClick={() => setOpen(true)}
                 aria-label="Vybrat zastupitelstvo"
+                aria-expanded={open}
                 className="p-2.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10"
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,20 +86,29 @@ function CouncilMenu({ demo }) {
             {/* Portál do body: hlavička má vlastní stacking context (relative
                 z-[1200]), uvnitř by přes menu přečnívala spodní lišta i brouk */}
             {open && createPortal(
-                <div className="fixed inset-0 z-[3000] bg-black/50" onClick={() => setOpen(false)}>
+                <div className="fixed inset-0 z-[3000] bg-black/50" onClick={close}>
                     <div
-                        className="absolute right-0 top-0 bottom-0 w-[86vw] max-w-sm bg-white shadow-2xl flex flex-col"
+                        ref={panelRef}
+                        tabIndex={-1}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Výběr zastupitelstva"
+                        className="absolute right-0 top-0 bottom-0 w-[86vw] max-w-sm bg-white shadow-2xl flex flex-col outline-none"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="p-4 bg-black text-white flex items-center justify-between">
+                        <div className="px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] bg-black text-white flex items-center justify-between">
                             <img src="/brand/logo-full-white.svg" alt="Piráti" className="h-6" />
-                            <button onClick={() => setOpen(false)} aria-label="Zavřít" className="p-2 -m-2 text-white/60 hover:text-white">
+                            <button onClick={close} aria-label="Zavřít menu" className="p-3 -m-3 text-white/60 hover:text-white">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+                        <nav className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-1">
+                            {/* cesta zpátky na přehled hned nahoře, ne až pod 57 MČ */}
+                            <a href={demo ? '/?demo' : '/'} className="flex items-center gap-2 rounded-xl px-3 py-3 mb-2 bg-[#FFF6D1] text-neutral-900 font-semibold hover:bg-[#FEC900]">
+                                <span aria-hidden="true">←</span> Přehled všech zastupitelstev
+                            </a>
                             <div className="font-condensed px-3 pt-1 pb-2 text-xs font-bold uppercase tracking-wider text-neutral-400">Piráti kandidují</div>
                             {COUNCILS.filter((c) => c.pirates).map((c) => {
                                 const isCurrent = c.slug === current?.slug;
@@ -99,6 +116,7 @@ function CouncilMenu({ demo }) {
                                     <a
                                         key={c.slug}
                                         href={`/${c.slug}${demo ? '?demo' : ''}`}
+                                        aria-current={isCurrent ? 'page' : undefined}
                                         className={`flex items-center justify-between rounded-xl px-3 py-2 ${isCurrent ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-800'}`}
                                     >
                                         <span>
@@ -117,6 +135,7 @@ function CouncilMenu({ demo }) {
                                     <a
                                         key={c.slug}
                                         href={`/${c.slug}${demo ? '?demo' : ''}`}
+                                        aria-current={c.slug === current?.slug ? 'page' : undefined}
                                         className={`truncate rounded-lg px-3 py-2.5 text-sm ${c.slug === current?.slug ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-700'}`}
                                     >
                                         {c.name.replace(/^Praha-/, '')}
@@ -130,16 +149,21 @@ function CouncilMenu({ demo }) {
                                         {demo ? 'zpět na skutečná data z volby.gov.cz' : 'simulace večera z dat 2022 — na vyzkoušení'}
                                     </div>
                                 </a>
-                                <a href={demo ? '/?demo' : '/'} className="block rounded-xl px-3 py-2.5 hover:bg-neutral-100 text-neutral-800">
-                                    <div className="text-sm font-semibold">Přehled všech zastupitelstev</div>
-                                </a>
                             </div>
                         </nav>
-                        <div className="p-4 border-t border-neutral-100 text-[11px] text-neutral-400 leading-relaxed">
+                        <div className="px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-neutral-100 text-[11px] text-neutral-500 leading-relaxed">
                             Data: ČSÚ (volby.gov.cz). Loga a část fotek: programydovoleb.cz. Mandáty do vyhlášení ČSÚ = odhad.
                             <div className="mt-2 flex items-center justify-between text-xs">
                                 <span>Verze {APP_VERSION}</span>
-                                <button onClick={openChangelog} className="py-2 -my-2 font-semibold text-black hover:underline">Co je nové</button>
+                                <button
+                                    onClick={() => {
+                                        close();
+                                        openChangelog();
+                                    }}
+                                    className="py-2 -my-2 font-semibold text-black hover:underline"
+                                >
+                                    Co je nové
+                                </button>
                             </div>
                         </div>
                     </div>

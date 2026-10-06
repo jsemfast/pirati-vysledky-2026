@@ -4,6 +4,7 @@
 // a časová past (viz api/bug.js).
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BugReportScreenshotError, prepareScreenshot, submitBugReport } from '../volby/bugReport';
+import { useDialog } from '../hooks/useDialog';
 
 // Stejný brouk jako v ostatních projektech (czexpats-connect)
 function BugIcon({ className = 'w-5 h-5' }) {
@@ -29,7 +30,8 @@ function useHideOnScroll() {
         const last = new WeakMap();
         const onScroll = (e) => {
             const el = e.target === document ? document.scrollingElement : e.target;
-            if (!el || typeof el.scrollTop !== 'number') return;
+            // rolování uvnitř menu nebo jiného okna se stránky netýká
+            if (!el || typeof el.scrollTop !== 'number' || el.closest('[role=dialog]')) return;
             const y = el.scrollTop;
             const prev = last.get(el) ?? 0;
             last.set(el, y);
@@ -72,6 +74,10 @@ export default function BugReportWidget({ raised = false }) {
         }
     }, []);
 
+    // Esc, zámek scrollu pod oknem a fokus (i na obrazovce „Chyba nahlášena")
+    const close = useCallback(() => setOpen(false), []);
+    const dialogRef = useDialog(open, close);
+
     // Screenshot ze schránky (Ctrl+V / ⌘V) kdekoli, když je formulář otevřený
     useEffect(() => {
         if (!open || result) return undefined;
@@ -82,15 +88,8 @@ export default function BugReportWidget({ raised = false }) {
                 addFile(file);
             }
         };
-        const onKey = (e) => {
-            if (e.key === 'Escape') setOpen(false);
-        };
         window.addEventListener('paste', onPaste);
-        window.addEventListener('keydown', onKey);
-        return () => {
-            window.removeEventListener('paste', onPaste);
-            window.removeEventListener('keydown', onKey);
-        };
+        return () => window.removeEventListener('paste', onPaste);
     }, [open, result, addFile]);
 
     const openForm = () => {
@@ -155,10 +154,12 @@ export default function BugReportWidget({ raised = false }) {
             {open && (
                 <div className="fixed inset-0 z-[3600] bg-black/40 flex items-end sm:items-center sm:justify-end sm:p-4" onClick={() => setOpen(false)}>
                     <div
+                        ref={dialogRef}
+                        tabIndex={-1}
                         role="dialog"
                         aria-modal="true"
                         aria-label="Formulář pro nahlášení chyby"
-                        className="w-full sm:w-[400px] max-h-[90dvh] overflow-y-auto bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl"
+                        className="w-full sm:w-[400px] max-h-[90dvh] overflow-y-auto overscroll-contain bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl outline-none pb-[env(safe-area-inset-bottom)] sm:pb-0"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="sticky top-0 bg-black text-white px-4 py-3 flex items-center justify-between">
@@ -166,7 +167,7 @@ export default function BugReportWidget({ raised = false }) {
                                 <BugIcon className="w-5 h-5 text-[#FEC900]" />
                                 Nahlásit chybu
                             </span>
-                            <button onClick={() => setOpen(false)} aria-label="Zavřít" className="p-2 -m-2 text-white/60 hover:text-white">
+                            <button onClick={close} aria-label="Zavřít" className="p-3 -m-3 text-white/60 hover:text-white">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -259,7 +260,9 @@ export default function BugReportWidget({ raised = false }) {
                                                 dragging ? 'border-[#FEC900] bg-[#FFF6D1]' : 'border-neutral-300 text-neutral-500 hover:border-neutral-500'
                                             }`}
                                         >
-                                            Přetáhni screenshot sem, vlož <b>Ctrl+V</b> nebo <span className="underline font-semibold text-black">vyber soubor</span>
+                                            {/* na dotykovém displeji nejde přetahovat ani Ctrl+V */}
+                                            <span className="pointer-coarse:hidden">Přetáhni screenshot sem, vlož <b>Ctrl+V</b> nebo <span className="underline font-semibold text-black">vyber soubor</span></span>
+                                            <span className="hidden pointer-coarse:inline"><span className="underline font-semibold text-black">Vyber screenshot</span> z galerie</span>
                                             <span className="block text-[11px] text-neutral-400 mt-0.5">PNG, JPG, GIF, WebP</span>
                                         </button>
                                     )}
