@@ -9,8 +9,10 @@ import { OVERVIEW_SOURCE, useLiveResults } from '../hooks/useLiveResults';
 import { createOverviewDemoFeed } from '../volby/overview';
 import { listLabels } from '../volby/council';
 import { countdown, fmtInt, fmtPct, fmtPp, fmtShortTime, fmtTime, parseCsuTime, plural } from '../volby/format';
-import { StatusPill } from '../components/ElectionHeader';
+import { RefreshButton, StatusPill } from '../components/ElectionHeader';
 import { useNow } from '../hooks/useNow';
+import { APP_VERSION } from '../changelog';
+import { openChangelog } from '../utils/openChangelog';
 
 const params = new URLSearchParams(window.location.search);
 const DEMO = params.has('demo');
@@ -210,7 +212,6 @@ function Hero({ snapshot, live, lists }) {
     const anyLive = withData.length > 0;
     const allOfficial = anyLive && withData.length === OURS.length && withData.every((c) => s[c.zastup].official);
     const p = snapshot?.precincts;
-    const nextIn = live.nextAt ? Math.max(0, Math.round((live.nextAt - now) / 1000)) : null;
     const dataTime = DEMO ? snapshot?.fetchedAt : parseCsuTime(snapshot?.generated);
 
     let line;
@@ -225,16 +226,7 @@ function Hero({ snapshot, live, lists }) {
                     <img src="/brand/logo-full-white.svg" alt="Česká pirátská strana" className="h-8 md:h-10" />
                     <div className="ml-auto flex items-center gap-2">
                         <StatusPill phase={phase} demo={DEMO} stale={live.stale} />
-                        <button
-                            onClick={() => live.refresh()}
-                            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold text-white/70 hover:text-white hover:bg-white/10"
-                            aria-label="Obnovit výsledky"
-                        >
-                            <svg className={`w-4 h-4 ${live.fetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span className="tabular-nums">{nextIn === null ? '' : nextIn >= 90 ? `${Math.floor(nextIn / 60)}:${String(nextIn % 60).padStart(2, '0')}` : `${nextIn} s`}</span>
-                        </button>
+                        <RefreshButton live={live} now={now} demo={DEMO} showLabel="" />
                     </div>
                 </div>
 
@@ -425,6 +417,10 @@ export default function Landing() {
                         </p>
                     </div>
                 </section>
+                <footer className="mt-10 pt-4 border-t border-neutral-200 flex items-center justify-between text-xs text-neutral-400">
+                    <span>Verze {APP_VERSION} · data ČSÚ (volby.gov.cz)</span>
+                    <button onClick={openChangelog} className="font-semibold text-black hover:underline">Co je nové</button>
+                </footer>
             </main>
         </div>
     );
