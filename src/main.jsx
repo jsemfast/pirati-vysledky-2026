@@ -1,11 +1,14 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { councilBySlug } from './councils.js'
-import Landing from './pages/Landing.jsx'
-import CouncilApp from './pages/CouncilApp.jsx'
 import UpdateManager from './components/UpdateManager.jsx'
 import BugReportWidget from './components/BugReportWidget.jsx'
+
+// Každá stránka (a mapa uvnitř stránky zastupitelstva) je zvlášť — přehled
+// tak na telefonu nestahuje MapLibre a Leaflet, které nepoužívá
+const Landing = lazy(() => import('./pages/Landing.jsx'))
+const CouncilApp = lazy(() => import('./pages/CouncilApp.jsx'))
 
 // Mini-router: /<slug> = výsledky zastupitelstva (viz src/councils.js),
 // cokoli jiného = přehled. Na Vercelu má každý slug rewrite ve vercel.json.
@@ -14,7 +17,9 @@ const council = councilBySlug(slug)
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {council ? <CouncilApp council={council} /> : <Landing />}
+    <Suspense fallback={<div className="h-dvh bg-black" />}>
+      {council ? <CouncilApp council={council} /> : <Landing />}
+    </Suspense>
     <UpdateManager />
     <BugReportWidget raised={!!council} />
   </StrictMode>,

@@ -2,9 +2,8 @@
 // Desktop: vlevo panel se záložkami, vpravo mapa okrsků s detailem.
 // Mobil: obsah podle spodní lišty (Přehled / Mapa / Zastupitelé / Koalice / Okrsky).
 // Bez mapy (Magistrát): jen panely na střed. ?demo spustí simulované sčítání.
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ElectionHeader from '../components/ElectionHeader';
-import ResultsMap from '../components/ResultsMap';
 import PartyResults from '../components/PartyResults';
 import Councilors from '../components/Councilors';
 import CoalitionPanel, { CoalitionHero, LastSeatCard } from '../components/Coalition';
@@ -20,6 +19,10 @@ import { turnout2022 } from '../volby/compute';
 import { POLLS_CLOSE } from '../councils';
 import { countdown, fmtInt, fmtPct } from '../volby/format';
 import { scrollBehavior } from '../utils/motion';
+
+// Mapa (Leaflet + MapLibre, většina velikosti aplikace) se stahuje zvlášť —
+// panely s výsledky se ukážou hned, mapa doběhne za nimi
+const ResultsMap = lazy(() => import('../components/ResultsMap'));
 
 const params = new URLSearchParams(window.location.search);
 const DEMO = params.has('demo');
@@ -253,23 +256,25 @@ export default function CouncilApp({ council }) {
 
     const map = withMap && (
         <div className="relative h-full w-full">
-            <ResultsMap
-                geoJson={statics.geoJson}
-                snapshot={mapSnapshot}
-                historical={counted === 0}
-                results2022={statics.results2022}
-                modeId={mapMode}
-                partyId={mapParty ?? model.parties[0]?.id}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-                freshIds={live.freshIds}
-                arrivals={live.arrivals}
-                isMobile={isMobile}
-                // na mobilu ovládání přes celou šířku nahoře a detail okrsku přes celou šířku dole
-                insetTop={isMobile && controlsH ? controlsH + 16 : 12}
-                insetBottom={isMobile && sheetH ? sheetH + 12 : 0}
-                onBackgroundClick={closePrecinct}
-            />
+            <Suspense fallback={<div className="h-full w-full bg-[#E5E5E3] animate-pulse" />}>
+                <ResultsMap
+                    geoJson={statics.geoJson}
+                    snapshot={mapSnapshot}
+                    historical={counted === 0}
+                    results2022={statics.results2022}
+                    modeId={mapMode}
+                    partyId={mapParty ?? model.parties[0]?.id}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    freshIds={live.freshIds}
+                    arrivals={live.arrivals}
+                    isMobile={isMobile}
+                    // na mobilu ovládání přes celou šířku nahoře a detail okrsku přes celou šířku dole
+                    insetTop={isMobile && controlsH ? controlsH + 16 : 12}
+                    insetBottom={isMobile && sheetH ? sheetH + 12 : 0}
+                    onBackgroundClick={closePrecinct}
+                />
+            </Suspense>
             <div ref={controlsRef} className={`absolute z-[1000] ${isMobile ? 'top-2 left-2 right-2' : 'top-3 right-3 w-64 lg:w-72'}`}>
                 <MapControls
                     modeId={mapMode}
