@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { activeCouncil, colorOnDark, partyMeta } from '../volby/council';
 import { baselineShare, precinctShare, precinctWinner } from '../volby/compute';
 import { MAP_MODES, getMapMode, mapModesFor } from '../volby/mapModes';
-import { textOn } from '../volby/colors';
+import { textOn, UNCOUNTED_FILL } from '../volby/colors';
 import { fmtInt, fmtPct, fmtShortTime } from '../volby/format';
 import { Card, Delta, SectionTitle } from './ui';
 import { scrollBehavior } from '../utils/motion';
@@ -116,7 +116,7 @@ export function MapControls({ modeId, onMode, partyId, onParty, parties, compact
                         ))}
                     </span>
                     <span className="shrink-0">{mode.legend[0].label}</span>
-                    <span className="shrink-0 w-2.5 h-2.5 rounded-sm border border-dashed border-neutral-500 bg-[#D6D0C4]" title="čeká na sečtení" />
+                    <span className="shrink-0 w-2.5 h-2.5 rounded-sm border border-dashed border-neutral-500" style={{ backgroundColor: UNCOUNTED_FILL }} title="čeká na sečtení" />
                 </div>
             )}
             {mode.legend && !compact && (
@@ -141,7 +141,7 @@ export function MapControls({ modeId, onMode, partyId, onParty, parties, compact
             )}
             {(!compact || !mode.legend) && (
                 <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-neutral-500">
-                    <span className="w-3 h-3 rounded-sm border border-dashed border-neutral-500 bg-[#D6D0C4]" /> čeká na sečtení
+                    <span className="w-3 h-3 rounded-sm border border-dashed border-neutral-500" style={{ backgroundColor: UNCOUNTED_FILL }} /> čeká na sečtení
                 </div>
             )}
         </div>
