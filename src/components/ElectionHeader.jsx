@@ -1,6 +1,7 @@
 // Hlavička výsledkové stránky: stav živých dat, odpočet do další kontroly,
 // ruční obnovení, pruh okrsků a přepínač zastupitelstev.
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNow } from '../hooks/useNow';
 import { APP_VERSION } from '../changelog';
 import { openChangelog } from '../utils/openChangelog';
@@ -74,7 +75,9 @@ function CouncilMenu({ demo }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
             </button>
-            {open && (
+            {/* Portál do body: hlavička má vlastní stacking context (relative
+                z-[1200]), uvnitř by přes menu přečnívala spodní lišta i brouk */}
+            {open && createPortal(
                 <div className="fixed inset-0 z-[3000] bg-black/50" onClick={() => setOpen(false)}>
                     <div
                         className="absolute right-0 top-0 bottom-0 w-[86vw] max-w-sm bg-white shadow-2xl flex flex-col"
@@ -140,7 +143,8 @@ function CouncilMenu({ demo }) {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body,
             )}
         </>
     );
