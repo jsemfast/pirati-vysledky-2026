@@ -5,6 +5,7 @@
 //   public/data/<slug>/results2022.json výsledky KV 2022 po okrscích
 //   public/data/<slug>/okrsky.geojson  hranice okrsků (WGS84, zjednodušené)
 //   public/media/<slug>/logos|photos   loga stran a fotky z programydovoleb.cz
+//   public/data/prehled.json           podklady přehledu (/) za všechna zastupitelstva
 //
 // Zdroje: open data ČSÚ (registry KV 2026, výsledky + registry KV 2022),
 // hranice okrsků 2025 (ČSÚ, zrcadlo programydovoleb.cz), programydovoleb.cz
@@ -19,7 +20,7 @@ import proj4 from 'proj4';
 import simplify from '@turf/simplify';
 import sharp from 'sharp';
 import { COUNCILS, KV_BASE_URL, PIRATES_CODE } from '../src/councils.js';
-import { ROOT, codes, csvFromZip, download, downloadJson, writeJson } from './lib/util.js';
+import { ROOT, codes, csvFromZip, download, downloadJson, slugify, writeJson } from './lib/util.js';
 
 const URLS = {
     reg2026: 'https://volby.gov.cz/opendata/kv2026/KV2026reg20261002_csv.zip',
@@ -84,6 +85,49 @@ async function main() {
         console.log(`\n=== ${council.name} (${council.zastup}) ===`);
         await buildCouncil(council, { ros2026, rk2026, ros2022, t3, hl, geo, partyInfo });
     }
+    await buildOverview();
+}
+
+// Přehled (/) potřebuje za každé zastupitelstvo jen kandidátky (zkratky,
+// barvy, počty kandidátů) a výchozí stav 2022 — skládá se z hotových
+// lists.json, aby šel přegenerovat i po `npm run data -- <slug>`
+async function buildOverview() {
+    const out = {};
+    for (const council of COUNCILS) {
+        let data;
+        try {
+            data = JSON.parse(await fs.readFile(path.join(ROOT, 'public/data', council.slug, 'lists.json'), 'utf8'));
+        } catch {
+            console.warn(`  ! přehled: chybí data ${council.slug}`);
+            continue;
+        }
+        const votes2022 = data.lists2022.reduce((s, l) => s + l.votes, 0);
+        const old = new Map(data.lists2022.map((l) => [l.id, l]));
+        const owners = (id) => data.lists.filter((l) => l.split?.some((x) => x.id === id)).length || 1;
+        out[council.zastup] = {
+            votes2022,
+            lists: data.lists.map((l) => {
+                const ids = l.baseline?.ids || null;
+                return {
+                    id: l.id,
+                    short30: l.short30,
+                    short8: l.short8,
+                    color: l.color,
+                    members: l.members,
+                    candidates: l.candidates,
+                    baselineLabel: l.baseline?.label || null,
+                    pct2022: ids && votes2022 ? round2((ids.reduce((s, id) => s + (old.get(id)?.votes || 0), 0) / votes2022) * 100) : null,
+                    // jen pro demo: rozdělená kandidátka 2022 dílem mezi nástupce
+                    est2022: !ids && l.split && votes2022
+                        ? round2(l.split.reduce((s, x) => s + (old.get(x.id)?.votes || 0) / owners(x.id), 0) / votes2022 * 100)
+                        : undefined,
+                    seats2022: ids ? ids.reduce((s, id) => s + (old.get(id)?.seats || 0), 0) : null,
+                };
+            }),
+        };
+    }
+    await writeJson(path.join(ROOT, 'public/data/prehled.json'), { generated: new Date().toISOString(), councils: out });
+    log(`\npřehled: ${Object.keys(out).length} zastupitelstev`);
 }
 
 async function buildCouncil(council, { ros2026, rk2026, ros2022, t3, hl, geo, partyInfo }) {
@@ -157,7 +201,7 @@ async function buildCouncil(council, { ros2026, rk2026, ros2022, t3, hl, geo, pa
 
     mapPredecessors(lists, lists2022);
     for (const l of lists) {
-        const how = l.baseline ? `${l.baseline.exact ? '=' : '≈'} ${l.baseline.label}` : l.split ? `rozdělené: ${l.split.map((s) => s.label).join(' / ')}` : 'nová';
+        const how = l.baseline ? `${l.baseline.exact ? '=' : '≈'} ${l.baseline.label}${l.baseline.byName ? ' (podle názvu)' : ''}` : l.split ? `rozdělené: ${l.split.map((s) => s.label).join(' / ')}` : 'nová';
         log(`  2026 ${String(l.id).padStart(2)} ← ${how}`);
     }
 
@@ -259,12 +303,13 @@ async function buildCouncil(council, { ros2026, rk2026, ros2022, t3, hl, geo, pa
             });
         }
         parties[l.id] = { candidates: candidates.sort((a, b) => a.n - b.n) };
+        l.candidates = candidates.length;
     }
     log(`kandidáti: ${Object.values(parties).reduce((s, p) => s + p.candidates.length, 0)}, s fotkou ${photos}`);
 
     // --- hranice okrsků
     const features = geo.features
-        .filter((f) => (council.zastup === 554782
+        .filter((f) => (council.magistrat
             ? String(f.properties.kod_obec) === z
             : String(f.properties.kod_mco) === z))
         .map((f) => simplify({
@@ -294,6 +339,8 @@ async function buildCouncil(council, { ros2026, rk2026, ros2022, t3, hl, geo, pa
 // stranou (podle složení, bez nezávislých). Když se strana 2022 rozdělila
 // mezi víc kandidátek 2026 (KDU-ČSL + ODS → letos každá jinde), srovnání
 // v p. b. by lhalo — kandidátka dostane jen informační „split".
+// Sdružení nezávislých stranu nemají (PRAHA 7 SOBĚ, SOS Suchdol…) — ta se
+// párují podle stejného názvu s kandidátkou 2022, kterou nikdo jiný nemá.
 function mapPredecessors(lists, lists2022) {
     const set = (codesList) => new Set(codesList.filter((c) => c !== NK));
     const sets26 = new Map(lists.map((l) => [l.id, set(l.slozeni)]));
@@ -315,7 +362,20 @@ function mapPredecessors(lists, lists2022) {
         const exact = [...S].every((c) => covered.has(c)) && related.every((k) => [...k.set].every((c) => S.has(c)));
         l.baseline = { ids: related.map((k) => k.id), label: related.map((k) => k.short).join(' + '), exact };
     }
+
+    const taken = new Set(lists.flatMap((l) => [...(l.baseline?.ids || []), ...(l.split || []).map((s) => s.id)]));
+    const norm = (s) => slugify(s).replace(/-/g, ' ');
+    for (const l of lists) {
+        if (l.baseline || l.split) continue;
+        const names = new Set([norm(l.name), norm(l.short30)]);
+        const same = olds.filter((k) => !taken.has(k.id) && (names.has(norm(k.name)) || names.has(norm(k.short))));
+        if (same.length !== 1) continue;
+        taken.add(same[0].id);
+        l.baseline = { ids: [same[0].id], label: same[0].short, exact: false, byName: true };
+    }
 }
+
+const round2 = (n) => Math.round(n * 100) / 100;
 
 function reproject(geometry) {
     const ring = (coords) => coords.map(([x, y]) => toWgs.forward([x, y]).map((v) => Math.round(v * 1e5) / 1e5));

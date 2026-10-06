@@ -1,22 +1,56 @@
 # Volby 2026 — živé výsledky (Piráti Praha)
 
 Webová aplikace pro sledování průběžných výsledků **komunálních voleb
-9.–10. října 2026** v pražských zastupitelstvech. Data bere přímo z ČSÚ
-(volby.gov.cz), sama se obnovuje a ukazuje, co nás ve volební noc zajímá:
-kolik mají Piráti, kdo by byl zvolen, jestli drží současná koalice a s kým se
-dá skládat většina.
+9.–10. října 2026** ve všech pražských zastupitelstvech — Magistrát a všech
+57 městských částí. Data bere přímo z ČSÚ (volby.gov.cz), sama se obnovuje
+a ukazuje, co nás ve volební noc zajímá: kolik mají Piráti v každé MČ, kdo by
+byl zvolen, jestli drží současná koalice a s kým se dá skládat většina.
 
-| Zastupitelstvo | Adresa | Mandátů | Okrsků | Piráti | Stav |
-|---|---|---|---|---|---|
-| Praha 3 | `/praha-3` | 35 | 52 | kandidátka č. 1 (s PRAHA 3 SOBĚ a E. Janečkovou) | hotovo |
-| Praha 6 | `/praha-6` | 45 | 104 | kandidátka č. 4 | hotovo |
-| Praha 11 | `/praha-11` | 35 | 62 | kandidátka č. 6 | hotovo |
-| Hl. m. Praha (Magistrát) | `/praha` | 65 | 1 120 | kandidátka č. 7 | **beta** — bez mapy okrsků, viz [docs/MAGISTRAT.md](docs/MAGISTRAT.md) |
+Přehled (`/`) ukazuje souhrn za celou Prahu a u každé MČ, kde kandidujeme,
+průběžné procento a mandáty Pirátů už během sčítání. Každé zastupitelstvo má
+svou stránku `/<slug>` (`/praha-7`, `/praha-dolni-chabry`, …).
+
+Piráti kandidují na Magistrátu a ve 21 MČ:
+
+| Zastupitelstvo | Adresa | Mandátů | Okrsků | Pirátská kandidátka |
+|---|---|---|---|---|
+| Hl. m. Praha (Magistrát) | `/praha` | 65 | 1 120 | č. 7 Česká pirátská strana — **beta**, bez mapy okrsků, viz [docs/MAGISTRAT.md](docs/MAGISTRAT.md) |
+| Praha 1 | `/praha-1` | 27 | 21 | č. 13 Piráti a nezávislí pro Prahu 1 |
+| Praha 2 | `/praha-2` | 35 | 41 | č. 8 Česká pirátská strana |
+| Praha 3 | `/praha-3` | 35 | 52 | č. 1 Piráti, PRAHA 3 SOBĚ a Edita Janečková |
+| Praha 4 | `/praha-4` | 45 | 132 | č. 2 Česká pirátská strana |
+| Praha 5 | `/praha-5` | 41 | 81 | č. 8 Česká pirátská strana |
+| Praha 6 | `/praha-6` | 45 | 104 | č. 4 Česká pirátská strana |
+| Praha 7 | `/praha-7` | 29 | 36 | č. 6 Piráti a Starostové |
+| Praha 8 | `/praha-8` | 45 | 106 | č. 6 Česká pirátská strana |
+| Praha 9 | `/praha-9` | 33 | 43 | č. 7 Česká pirátská strana |
+| Praha 10 | `/praha-10` | 45 | 109 | č. 7 Česká pirátská strana |
+| Praha 11 | `/praha-11` | 35 | 62 | č. 6 Česká pirátská strana |
+| Praha 12 | `/praha-12` | 35 | 50 | č. 9 Piráti Praha 12 |
+| Praha 13 | `/praha-13` | 35 | 58 | č. 5 Zelení a Piráti pro 13 |
+| Praha 14 | `/praha-14` | 31 | 32 | č. 7 MY pro Prahu 14 - Piráti, Praha 14 sobě, Zelení |
+| Praha 15 | `/praha-15` | 31 | 23 | č. 9 Piráti a Praha 15 sobě |
+| Praha 16 | `/praha-16` | 15 | 8 | č. 4 Piráti a nezávislí kandidáti |
+| Praha 18 | `/praha-18` | 23 | 12 | č. 6 Zdravé Letňany |
+| Praha 22 | `/praha-22` | 25 | 9 | č. 4 Česká pirátská strana |
+| Praha-Petrovice | `/praha-petrovice` | 15 | 4 | č. 5 Žijeme Petrovice |
+| Praha-Řeporyje | `/praha-reporyje` | 15 | 3 | č. 3 PŘÍVĚTIVÉ ŘEPORYJE |
+| Praha-Zbraslav | `/praha-zbraslav` | 17 | 10 | č. 2 100pro Zbraslav |
+
+Ve zbylých 36 MČ (Praha 17, 19, 20, 21 a menší MČ) Piráti nekandidují —
+jejich stránky ukazují výsledky všech kandidátek bez pirátských prvků.
+Současnou koalici máme zadanou jen u Prahy 3, 6, 11 a Magistrátu (viz
+Konfigurace); jinde se karta koalice a režim mapy „Koalice" neukazují.
 
 ![Přehled](docs/img/prehled.webp)
 
 ## Co aplikace umí
 
+- **Přehled celé Prahy** (`/`) — kolik mandátů mají Piráti dohromady ve
+  všech MČ a na Magistrátu, karta každé MČ s Piráty (procento, mandáty,
+  pořadí, sečtené okrsky, pruh mandátů všech stran, co chybí na další mandát
+  nebo přes 5% klauzuli), řazení podle MČ / procent / mandátů. Ostatní MČ
+  s tím, kdo vede. Čerstvě změněné MČ krátce zablikají. Demo `/?demo`.
 - **Živé výsledky** — sečtené okrsky, účast, hlasy a procenta stran, automatické
   obnovení každou minutu (ČSÚ data stejně cachuje 60 s), odpočet do další
   kontroly, ruční obnovení.
@@ -75,7 +109,7 @@ Statická data jsou v repu — `npm run data` je potřeba jen při jejich obnov�
 | `npm run build` | produkční build do `dist/` |
 | `npm run preview` | náhled buildu (bez `/api` — klient pak čte rovnou z volby.gov.cz) |
 | `npm run lint` | ESLint |
-| `npm run data` | znovu vygeneruje `public/data/` a `public/media/` (všechna zastupitelstva) |
+| `npm run data` | znovu vygeneruje `public/data/` a `public/media/` (všech 58 zastupitelstev + `prehled.json`) |
 | `npm run data -- praha-6` | jen jedno zastupitelstvo; `--fresh` ignoruje cache stažených souborů |
 | `npm run verify` | ověří výpočet mandátů na oficiálních výsledcích 2022; `-- --all` na celé ČR |
 
@@ -94,11 +128,19 @@ Statická data jsou v repu — `npm run data` je potřeba jen při jejich obnov�
 Významy sloupců jsou zdokumentované v [`src/volby/feed.js`](src/volby/feed.js)
 (vyčtené z kódu aplikace ČSÚ, formát ověřený na hotových datech KZ 2024).
 
+Přehled (`/api/prehled`, [`src/volby/overview.js`](src/volby/overview.js))
+čte jen souhrnné soubory `vysled/1100/<zastup>.json` všech 58 zastupitelstev
+a z každého pošle stav sčítání, hlasy a mandáty stran (oficiální, nebo náš
+odhad) a výsledek Pirátů — celá odpověď má ~15 KB (~3–4 KB komprimovaně).
+
 ```
 prohlížeče ──(1×/min)──▶ CDN Vercelu ──(~2×/min/zastupitelstvo)──▶ api/volby.js ──(ETag, 304)──▶ volby.gov.cz
-     │                                                                                              ▲
-     └──────────────── záloha, když /api/volby 2× po sobě selže (CORS povolen) ─────────────────────┘
+     │                        └─────────(~2×/min)──────────────────▶ api/prehled.js ─(58 souborů)─┘   ▲
+     └──────────────── záloha, když naše API 2× po sobě selže (CORS povolen) ───────────────────────┘
 ```
+
+Záloha přehledu přímo z prohlížeče čte jen 22 zastupitelstev s Piráty
+a nejvýš jednou za 2 minuty.
 
 ### Šetrnost ke kapacitě
 
@@ -123,19 +165,20 @@ prohlížeče ──(1×/min)──▶ CDN Vercelu ──(~2×/min/zastupitelstv
 
 Velikost jedné odpovědi při plném sčítání (komprimovaně, brotli):
 Praha 3 **9 KB**, Praha 6 **15 KB**, Praha 11 **10 KB**, Magistrát **25 KB**
-(bez okrsků). První načtení stránky ≈ 0,5–0,8 MB (JS ~420 KB gzip, data,
-loga; fotky jen na záložce Zastupitelé).
+(bez okrsků), přehled **~4 KB**. První načtení stránky ≈ 0,5–0,8 MB (JS
+~430 KB gzip, data, loga; fotky jen na záložce Zastupitelé).
 
 | Scénář: 6 h sledování | CDN requesty | Přenos | Funkce | Zdroj volby.gov.cz |
 |---|---|---|---|---|
-| 1 000 diváků na každém ze 4 zastupitelstev | ~1,5 mil. | ~27 GB | ~3 000 spuštění, < 3 min CPU | ~24 podmíněných dotazů/min + 218 okrskových souborů za noc |
-| 5 000 diváků celkem | ~1,8 mil. | ~35 GB | stejně | stejně |
+| 5 000 diváků celkem | ~1,8 mil. | ~35 GB | ≤ 2 spuštění/min na sledované zastupitelstvo + přehled, < 30 min CPU | ≤ ~350 podmíněných dotazů/min (většinou 304) + ~1 100 okrskových souborů za noc |
 | 20 000 diváků celkem | ~7 mil. | ~130 GB | stejně | stejně |
 
 Na **Vercel Pro** (10 mil. requestů a 1 TB přenosu v ceně) je to ve všech
 scénářích 0 Kč navíc. Na Hobby (zhruba 1 mil. requestů / 100 GB měsíčně)
 by velký scénář narazil — projekt proto patří do placeného týmu. Počet
-spuštění funkce a zátěž volby.gov.cz na počtu diváků **nezávisí**.
+spuštění funkce a zátěž volby.gov.cz na počtu diváků **nezávisí** — jen na
+tom, kolik zastupitelstev má aspoň jednoho diváka (horní mez = všech 58
++ přehled, který sám čte 58 souborů ~2× za minutu).
 
 ## Data
 
@@ -149,13 +192,16 @@ Generuje je `npm run data` ([`scripts/build-data.js`](scripts/build-data.js)) do
 | `results2022.json` | KV 2022 po okrscích: voliči, obálky, hlasy kandidátek | open data KV 2022 (ČSÚ) |
 | `okrsky.geojson` | hranice okrsků (WGS84, zjednodušené) | ČSÚ, okrsky 2025 (S-JTSK → WGS84) |
 | `media/*/logos`, `photos` | loga a fotky (WebP, zmenšené) | programydovoleb.cz, vlastní fotky |
+| `data/prehled.json` | za každé zastupitelstvo kandidátky (zkratky, barvy, počty kandidátů) a výsledek předchůdců 2022 — podklad přehledu `/` | skládá se z hotových `lists.json` |
 
 **Předchůdci 2022** se párují automaticky podle složení stran (kódy ČSÚ,
 bez nezávislých): kandidátka 2026 ← kandidátky 2022, se kterými sdílí
 stranu. Když se kandidátka 2022 rozdělila mezi víc kandidátek 2026 (např.
 KDU-ČSL + ODS na Praze 3, STAN se Zelenými na Praze 6), změna v p. b. se
-nepočítá — UI ukáže jen informativní „2022: …". Výsledek párování vypíše
-`npm run data` do konzole.
+nepočítá — UI ukáže jen informativní „2022: …". Sdružení nezávislých
+kandidátů žádnou stranu nemají — ta se párují podle stejného názvu
+(PRAHA 7 SOBĚ, SOS Suchdol, …), pokud kandidátku 2022 nemá jiná. Výsledek
+párování vypíše `npm run data` do konzole (`(podle názvu)`).
 
 **Barvy:** Piráti vždy černí (v mapě pirátská žlutá škála), ostatní barva
 kandidátky z programydovoleb.cz → barva strany → paleta; podobné barvy se
@@ -163,33 +209,40 @@ přidělí podle váhy strany v roce 2022. Ruční výjimky v `src/councils.js`.
 
 ## Konfigurace: `src/councils.js`
 
-Jediné místo s ručně zadaným politickým kontextem:
+Jediné místo s ručně zadaným politickým kontextem. Má dvě části:
 
-- `pirates` — číslo pirátské kandidátky,
-- `coalition` — současná koalice (čísla kandidátek 2026) a kolik měla
-  mandátů v roce 2022,
-- `lists` — zkrácené názvy (`short`, `tiny`), poznámka, případně barva,
-- `photos` — vlastní fotky (`public/media/<slug>/photos/`),
-- `map`, `precinctFiles` — mapa a okrskové soubory (u Magistrátu vypnuté).
+- **`PRAHA`** — tabulka všech 58 zastupitelstev vygenerovaná z registrů ČSÚ
+  (slug, kód, název, mandáty, okrsky, číslo pirátské kandidátky; `null` =
+  Piráti nekandidují). Kandidátky jsou od 2. 10. konečné, ručně se nemění.
+- **`DETAIL`** — ruční kontext podle slugu (zatím Praha 3, 6, 11, Magistrát):
+  - `coalition` — současná koalice (čísla kandidátek 2026) a kolik měla
+    mandátů v roce 2022; bez ní stránka kartu koalice nezobrazí,
+  - `lists` — zkrácené názvy (`short`, `tiny`), poznámka, případně barva
+    (jinak zkratky z registru ČSÚ; společná pirátská kandidátka dostane
+    poznámku s výčtem členů automaticky),
+  - `photos` — vlastní fotky (`public/media/<slug>/photos/`),
+  - `map`, `precinctFiles`, `title`, `beta` — u Magistrátu mapa vypnutá.
+
+Koalici další MČ doplníš přidáním `'<slug>': { coalition: { lists, label,
+seats2022, seatsTotal2022 } }` do `DETAIL` — nic dalšího měnit netřeba.
 
 > ⚠️ **Koalice jsou podle zpráv z let 2022–2023** (Praha 6: ODS + KDU-ČSL,
 > STAN, PRAHA 6 SOBĚ; Praha 11: Piráti, ANO, ODS, TOP 09 + STAN; Magistrát:
 > SPOLU, Piráti, STAN). Pokud se během volebního období změnily, uprav
 > `coalition.lists` — nic dalšího měnit netřeba.
 
-### Přidání dalšího zastupitelstva
+### Přidání dalšího zastupitelstva (mimo Prahu)
 
 1. Najdi kód zastupitelstva (`KODZASTUP`) — např. v
-   `https://volby.gov.cz/appdata/kv2026/20261009/navig/obce/1100.json`
-   (Praha; mimo Prahu jiný okres).
-2. Přidej položku do `COUNCILS` (slug, zastup, okres, seats, precincts,
-   pirates, coalition…). Počet mandátů a okrsků ověř v
-   `vysled/<okres>/<zastup>.json` (`prehled[0]`, `prehled[2]`).
-3. Přidej rewrite slugu do `vercel.json`.
+   `https://volby.gov.cz/appdata/kv2026/20261009/navig/obce/<okres>.json`.
+2. Přidej řádek do tabulky (pozor, `okres` je zatím pevně 1100 — rozšířit
+   o sloupec). Počet mandátů a okrsků ověř v `vysled/<okres>/<zastup>.json`
+   (`prehled[0]`, `prehled[2]`).
+3. Slug musí projít rewritem ve `vercel.json` (`praha`, `praha-*`).
 4. `npm run data -- <slug>` a zkontroluj výpis (párování 2022, barvy, loga).
 5. `npm run verify` a `/<slug>?demo`.
 
-Mimo Prahu: hranice okrsků se filtrují podle `kod_mco` (MČ) nebo `kod_obec`
+Hranice okrsků se filtrují podle `kod_mco` (MČ) nebo `kod_obec`
 — viz `buildCouncil()` ve skriptu.
 
 ## Nasazení (Vercel)
@@ -214,7 +267,8 @@ curl -sI "https://<doména>/api/volby?z=500097" | grep -i x-vercel-cache
 
 - [ ] Do čtvrtka nasazeno na produkci, prošlé `/<slug>?demo` na mobilu i desktopu.
 - [ ] Koalice v `src/councils.js` odpovídají realitě.
-- [ ] `x-vercel-cache: HIT` na `/api/volby?z=…` pro všechna zastupitelstva.
+- [ ] `x-vercel-cache: HIT` na `/api/prehled` a na `/api/volby?z=…` (aspoň Magistrát a MČ s Piráty).
+- [ ] Přehled `/?demo` na mobilu: karty MČ, řazení, souhrn mandátů.
 - [ ] Billing Vercel týmu v pořádku (žádná neuhrazená faktura).
 - [ ] V sobotu po 14:00 první okrsky: zkontrolovat, že čísla sedí s volby.gov.cz/app/kv2026.
 - [ ] Po vyhlášení mandátů ČSÚ: zkontrolovat, že se přepnulo na „oficiální mandáty".
@@ -224,7 +278,8 @@ curl -sI "https://<doména>/api/volby?z=500097" | grep -i x-vercel-cache
 `npm run verify` přepočítá mandáty a zvolené kandidáty z oficiálních výsledků
 KV 2022 a porovná je s ČSÚ:
 
-- sledovaná zastupitelstva (Praha 3, 6, 11, Magistrát): **100 %**,
+- všech 58 pražských zastupitelstev: **58 / 58 (100 %)**, mandáty stran
+  i zvolení kandidáti,
 - celá ČR (`-- --all`): **6 357 z 6 384 voleb (99,58 %)**, zvolení
   kandidáti bez jediné chyby. Zbylých 27 jsou malé obce s přesnou shodou
   podílů, kterou zákon rozhoduje losem.
@@ -237,15 +292,18 @@ v roce 2022 nesedělo ~1 100 kandidátů).
 
 ```
 api/volby.js              serverless proxy s CDN cache (whitelist zastupitelstev)
+api/prehled.js            přehled všech zastupitelstev (souhrny, výsledek Pirátů)
+api/_http.js              sdílené hlavičky / Cache-Control funkcí
 scripts/build-data.js     generování statických dat (ČSÚ + programydovoleb.cz)
 scripts/verify-2022.js    ověření výpočtu na výsledcích 2022
 src/councils.js           konfigurace zastupitelstev (ručně)
 src/volby/feed.js         stahování a normalizace dat ČSÚ (server i prohlížeč)
+src/volby/overview.js     souhrny zastupitelstev pro přehled + demo přehledu
 src/volby/compute.js      klauzule, d'Hondt, preference, koalice, srovnání s 2022
 src/volby/model.js        odvozený model pro UI
 src/volby/council.js      metadata aktivního zastupitelstva (barvy, loga, osa)
 src/volby/demo.js         demo sčítání
-src/hooks/useLiveResults.js  polling, záloha, backoff
+src/hooks/useLiveResults.js  polling, záloha, backoff (zastupitelstvo i přehled)
 src/pages/                Landing (/), CouncilApp (/<slug>)
 src/components/           hlavička, mapa, strany, zastupitelé, koalice, okrsky
 docs/MAGISTRAT.md         Magistrát: stav, plán, výpočetní náročnost

@@ -11,7 +11,7 @@ import CoalitionPanel, { CoalitionHero, LastSeatCard } from '../components/Coali
 import Hemicycle from '../components/Hemicycle';
 import { ArrivalsFeed, MapControls, PrecinctDetail } from '../components/Precincts';
 import { Card, SectionTitle } from '../components/ui';
-import { useLiveResults } from '../hooks/useLiveResults';
+import { councilSource, useLiveResults } from '../hooks/useLiveResults';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { buildModel, emptySnapshot, precincts2022 } from '../volby/model';
 import { createDemoFeed } from '../volby/demo';
@@ -83,7 +83,7 @@ export default function CouncilApp({ council }) {
     const [statics, setStatics] = useState(null);
     const [tab, setTab] = useState('overview');
     const [selectedId, setSelectedId] = useState(null);
-    const [mapMode, setMapMode] = useState('ours');
+    const [mapMode, setMapMode] = useState(council.pirates ? 'ours' : 'winner');
     const [mapParty, setMapParty] = useState(council.pirates);
 
     // Statické podklady: každý zvlášť a s opakováním — výpadek jednoho
@@ -134,7 +134,7 @@ export default function CouncilApp({ council }) {
             : null),
         [ready, demoResults, demoKandidati],
     );
-    const live = useLiveResults({ council, demo: DEMO, demoFeed });
+    const live = useLiveResults({ source: councilSource(council), demo: DEMO, demoFeed });
     const kandidati = statics?.kandidati;
     // Když se živá data vůbec nenačtou, ukázat aspoň odpočet, kandidátky
     // a výchozí stav 2022 (náhradní snapshot z kandidátek)
@@ -163,7 +163,7 @@ export default function CouncilApp({ council }) {
         }
         const p = model.snapshot.precincts;
         document.title = model.hasVotes
-            ? `${p.counted}/${p.total} · Piráti ${fmtPct(model.ours?.share)} · ${council.name}`
+            ? `${p.counted}/${p.total}${model.ours ? ` · Piráti ${fmtPct(model.ours.share)}` : ''} · ${council.name}`
             : `${council.name} · Volby 2026 · Piráti`;
     }, [model, council.name]);
 
@@ -194,7 +194,7 @@ export default function CouncilApp({ council }) {
                 historical={counted === 0}
                 results2022={statics.results2022}
                 modeId={mapMode}
-                partyId={mapParty}
+                partyId={mapParty ?? model.parties[0]?.id}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 freshIds={live.freshIds}
@@ -205,7 +205,7 @@ export default function CouncilApp({ council }) {
                 <MapControls
                     modeId={mapMode}
                     onMode={setMapMode}
-                    partyId={mapParty}
+                    partyId={mapParty ?? model.parties[0]?.id}
                     onParty={setMapParty}
                     parties={model.parties}
                     compact={isMobile}
@@ -239,6 +239,11 @@ export default function CouncilApp({ council }) {
                     <a href={`/${council.slug}?demo`} className="underline font-semibold">Spustit znovu</a> · <a href={`/${council.slug}`} className="underline">Skutečné výsledky</a>
                 </div>
             )}
+            {!council.pirates && (
+                <div className="rounded-xl bg-white border border-neutral-200 text-neutral-600 text-xs px-3 py-2">
+                    V této městské části Piráti letos nekandidují — stránka ukazuje výsledky všech kandidátek.
+                </div>
+            )}
             {council.beta && (
                 <div className="rounded-xl bg-white border border-neutral-200 text-neutral-600 text-xs px-3 py-2">
                     <b>Beta:</b> {council.title} běží v lehkém režimu — bez mapy {council.precincts} okrsků. Mandáty, zastupitelé a koalice fungují.
@@ -256,7 +261,11 @@ export default function CouncilApp({ council }) {
                 <SectionTitle right={<button onClick={() => setTab('councilors')} className="text-[11px] font-semibold text-black hover:underline">Kdo sedí kde →</button>}>
                     Rozdělení mandátů
                 </SectionTitle>
-                <Hemicycle model={model} highlight={model.coalition.members} centerLabel="současná koalice" />
+                {council.coalition ? (
+                    <Hemicycle model={model} highlight={model.coalition.members} centerLabel="současná koalice" />
+                ) : (
+                    <Hemicycle model={model} highlight={council.pirates ? [council.pirates] : null} centerLabel={council.pirates ? 'Piráti' : undefined} />
+                )}
             </Card>
             <LastSeatCard model={model} />
             {model.hasVotes && <TurnoutCard snapshot={snapshot} results2022={statics.results2022} />}

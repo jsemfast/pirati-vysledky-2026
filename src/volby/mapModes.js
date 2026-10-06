@@ -15,6 +15,13 @@ export const MAP_MODES = [
 
 const SHARE_BREAKS = [5, 10, 15, 20, 25, 30, 35];
 
+// Režimy, které dávají smysl: bez Pirátů v zastupitelstvu není „Piráti"
+// ani „vs 2022", bez zadané současné koalice není „Koalice"
+export function mapModesFor(council) {
+    return MAP_MODES.filter((m) => (m.id === 'ours' || m.id === 'swing' ? !!council?.pirates
+        : m.id === 'coalition' ? !!council?.coalition : true));
+}
+
 export function getMapMode(modeId, { partyId, results2022 } = {}) {
     const council = activeCouncil();
     const ours = council?.pirates;

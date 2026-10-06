@@ -34,17 +34,26 @@ function axisOf(list) {
     return known.length ? known.reduce((s, v) => s + v, 0) / known.length : 0.5;
 }
 
+// Zkratky kandidátky: ruční z councils.js, jinak z registru ČSÚ. Společná
+// kandidátka Pirátů bez ruční poznámky dostane výčet členů („Piráti + Zelení").
+export function listLabels(council, l) {
+    const o = council.lists?.[l.id] || {};
+    const members = (l.members || []).map((m) => (m.code === 80 ? 'nezávislí' : m.short));
+    return {
+        short: o.short || l.short30,
+        tiny: o.tiny || o.short || l.short8 || l.short30,
+        note: o.note || (l.id === council.pirates && members.length > 1 ? members.join(' + ') : null),
+    };
+}
+
 let active = null;
 
 export function setActiveCouncil(council, listsData) {
     const metas = {};
     for (const l of listsData.lists) {
-        const o = council.lists?.[l.id] || {};
         metas[l.id] = {
             id: l.id,
-            short: o.short || l.short30,
-            tiny: o.tiny || o.short || l.short8 || l.short30,
-            note: o.note || null,
+            ...listLabels(council, l),
             name: l.name,
             color: l.color,
             logos: l.logos || [],

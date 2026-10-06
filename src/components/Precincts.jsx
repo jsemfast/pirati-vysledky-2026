@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { activeCouncil, colorOnDark, partyMeta } from '../volby/council';
 import { baselineShare, precinctShare, precinctWinner } from '../volby/compute';
-import { MAP_MODES, getMapMode } from '../volby/mapModes';
+import { MAP_MODES, getMapMode, mapModesFor } from '../volby/mapModes';
 import { textOn } from '../volby/colors';
 import { fmtInt, fmtPct, fmtShortTime } from '../volby/format';
 import { Card, Delta, SectionTitle } from './ui';
@@ -46,7 +46,7 @@ export function MapControls({ modeId, onMode, partyId, onParty, parties, compact
     return (
         <div className={`bg-white/95 backdrop-blur rounded-xl shadow-lg border border-neutral-200 ${compact ? 'p-2' : 'p-2.5'}`}>
             <div className={`flex gap-1 ${compact ? 'overflow-x-auto -mx-1 px-1 [scrollbar-width:none]' : 'flex-wrap'}`}>
-                {MAP_MODES.map((m) => (
+                {mapModesFor(activeCouncil()).map((m) => (
                     <button
                         key={m.id}
                         onClick={() => onMode(m.id)}
@@ -177,11 +177,13 @@ export function PrecinctDetail({ id, snapshot, results2022, arrivals, onClose })
                             </div>
                         ))}
                     </div>
-                    <div className="mt-3 pt-2 border-t border-neutral-100 grid grid-cols-3 gap-2 text-center">
-                        <div>
-                            <div className="text-[10px] text-neutral-400">Současná koalice</div>
-                            <div className="text-sm font-bold tabular-nums">{fmtPct(coalition)}</div>
-                        </div>
+                    <div className={`mt-3 pt-2 border-t border-neutral-100 grid ${activeCouncil().coalition ? 'grid-cols-3' : 'grid-cols-2'} gap-2 text-center`}>
+                        {activeCouncil().coalition && (
+                            <div>
+                                <div className="text-[10px] text-neutral-400">Současná koalice</div>
+                                <div className="text-sm font-bold tabular-nums">{fmtPct(coalition)}</div>
+                            </div>
+                        )}
                         <div>
                             <div className="text-[10px] text-neutral-400">Voličů</div>
                             <div className="text-sm font-bold tabular-nums">{fmtInt(o.voters)}</div>
@@ -215,7 +217,8 @@ export function ArrivalsFeed({ snapshot, arrivals, results2022, onSelect, freshI
             ) : (
                 <ul className="divide-y divide-neutral-100">
                     {items.map(({ id, at, o }) => {
-                        const ours = precinctShare(o, ourId());
+                        // bez Pirátů v zastupitelstvu ukázat podíl vítěze okrsku
+                        const ours = ourId() ? precinctShare(o, ourId()) : null;
                         const then = ourBaseline() ? baselineShare(results2022, ourBaseline(), id) : null;
                         const w = precinctWinner(o);
                         return (
@@ -232,7 +235,7 @@ export function ArrivalsFeed({ snapshot, arrivals, results2022, onSelect, freshI
                                         </span>
                                     )}
                                     <span className="ml-auto text-right">
-                                        <span className="text-sm font-semibold tabular-nums text-[#000000]">{fmtPct(ours)}</span>
+                                        <span className="text-sm font-semibold tabular-nums text-[#000000]">{fmtPct(ourId() ? ours : w?.pct)}</span>
                                         {ours !== null && then !== null && <Delta value={ours - then} className="block text-[10px]" />}
                                     </span>
                                 </button>
@@ -241,7 +244,10 @@ export function ArrivalsFeed({ snapshot, arrivals, results2022, onSelect, freshI
                     })}
                 </ul>
             )}
-            <div className="mt-2 text-[10px] text-neutral-400">Čas = kdy okrsek poprvé viděl tento prohlížeč. Procento = Piráti, změna proti jejich výsledku v KV 2022 ve stejném okrsku.</div>
+            <div className="mt-2 text-[10px] text-neutral-400">
+                Čas = kdy okrsek poprvé viděl tento prohlížeč.{' '}
+                {ourId() ? 'Procento = Piráti, změna proti jejich výsledku v KV 2022 ve stejném okrsku.' : 'Procento = vítěz okrsku.'}
+            </div>
         </Card>
     );
 }
