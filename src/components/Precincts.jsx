@@ -162,7 +162,7 @@ export function PrecinctDetail({ id, snapshot, results2022, arrivals, onClose })
                         {r22?.voters > 0 && ` (2022: ${fmtPct((r22.envelopes / r22.voters) * 100)})`}
                     </div>
                 </div>
-                <button onClick={onClose} aria-label="Zavřít" className="p-1.5 -m-1.5 text-neutral-400 hover:text-neutral-700">
+                <button onClick={onClose} aria-label="Zavřít detail okrsku" className="p-3 -m-3 text-neutral-400 hover:text-neutral-700">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>

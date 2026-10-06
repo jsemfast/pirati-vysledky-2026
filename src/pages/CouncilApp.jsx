@@ -2,7 +2,7 @@
 // Desktop: vlevo panel se záložkami, vpravo mapa okrsků s detailem.
 // Mobil: obsah podle spodní lišty (Přehled / Mapa / Zastupitelé / Koalice / Okrsky).
 // Bez mapy (Magistrát): jen panely na střed. ?demo spustí simulované sčítání.
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ElectionHeader from '../components/ElectionHeader';
 import ResultsMap from '../components/ResultsMap';
 import PartyResults from '../components/PartyResults';
@@ -31,6 +31,22 @@ const ICONS = {
     coalition: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
     precincts: 'M3 7h18M3 12h18M3 17h18',
 };
+
+// Výška prvku (ResizeObserver) — ovládání a detail okrsku leží přes mapu
+// a mapa podle nich posouvá vybraný okrsek do viditelné části
+function useHeight() {
+    const [height, setHeight] = useState(0);
+    const ref = useCallback((el) => {
+        if (!el) return undefined;
+        const ro = new ResizeObserver(() => setHeight(el.offsetHeight));
+        ro.observe(el);
+        return () => {
+            ro.disconnect();
+            setHeight(0);
+        };
+    }, []);
+    return [ref, height];
+}
 
 function PreElectionCard({ slug }) {
     const [now, setNow] = useState(() => Date.now());
@@ -167,6 +183,10 @@ export default function CouncilApp({ council }) {
             : `${council.name} · Volby 2026 · Piráti`;
     }, [model, council.name]);
 
+    const [controlsRef, controlsH] = useHeight();
+    const [sheetRef, sheetH] = useHeight();
+    const closePrecinct = useCallback(() => setSelectedId(null), []);
+
     // Každá záložka si pamatuje, kam byla odrolovaná (jinak se nová záložka
     // otevřela v půlce, na pozici té předchozí). Klepnutí na už otevřenou
     // záložku vyroluje nahoru — jako v nativních aplikacích.
@@ -228,8 +248,12 @@ export default function CouncilApp({ council }) {
                 freshIds={live.freshIds}
                 arrivals={live.arrivals}
                 isMobile={isMobile}
+                // na mobilu ovládání přes celou šířku nahoře a detail okrsku přes celou šířku dole
+                insetTop={isMobile && controlsH ? controlsH + 16 : 12}
+                insetBottom={isMobile && sheetH ? sheetH + 12 : 0}
+                onBackgroundClick={closePrecinct}
             />
-            <div className={`absolute z-[1000] ${isMobile ? 'top-2 left-2 right-2' : 'top-3 right-3 w-72'}`}>
+            <div ref={controlsRef} className={`absolute z-[1000] ${isMobile ? 'top-2 left-2 right-2' : 'top-3 right-3 w-72'}`}>
                 <MapControls
                     modeId={mapMode}
                     onMode={setMapMode}
@@ -245,13 +269,18 @@ export default function CouncilApp({ council }) {
                 </div>
             )}
             {selectedId && (
-                <div className={`absolute z-[1000] ${isMobile ? 'left-2 right-2 bottom-2 max-h-[60%] overflow-y-auto' : 'top-3 left-3 w-80 max-h-[calc(100%-1.5rem)] overflow-y-auto'}`}>
+                <div
+                    ref={isMobile ? sheetRef : undefined}
+                    className={`absolute z-[1000] overflow-y-auto overscroll-contain ${
+                        isMobile ? 'left-2 right-2 bottom-2 max-h-[55%] short:left-auto short:w-[22rem] short:max-h-[70%]' : 'top-3 left-3 w-80 max-h-[calc(100%-1.5rem)]'
+                    }`}
+                >
                     <PrecinctDetail
                         id={selectedId}
                         snapshot={snapshot}
                         results2022={statics.results2022}
                         arrivals={live.arrivals}
-                        onClose={() => setSelectedId(null)}
+                        onClose={closePrecinct}
                     />
                 </div>
             )}
