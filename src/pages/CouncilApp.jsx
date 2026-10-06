@@ -270,7 +270,7 @@ export default function CouncilApp({ council }) {
                 insetBottom={isMobile && sheetH ? sheetH + 12 : 0}
                 onBackgroundClick={closePrecinct}
             />
-            <div ref={controlsRef} className={`absolute z-[1000] ${isMobile ? 'top-2 left-2 right-2' : 'top-3 right-3 w-72'}`}>
+            <div ref={controlsRef} className={`absolute z-[1000] ${isMobile ? 'top-2 left-2 right-2' : 'top-3 right-3 w-64 lg:w-72'}`}>
                 <MapControls
                     modeId={mapMode}
                     onMode={setMapMode}
@@ -418,7 +418,8 @@ export default function CouncilApp({ council }) {
                 </>
             ) : (
                 <main className="flex-1 min-h-0 flex">
-                    <aside className={`${withMap ? 'w-[440px] xl:w-[480px] shrink-0 border-r border-neutral-200' : 'flex-1'} flex flex-col bg-[#F3F3F1]`}>
+                    {/* tablet na výšku: užší panel, ať mapě zbyde místo i pro ovládání vedle zoomu */}
+                    <aside className={`${withMap ? 'w-[360px] lg:w-[440px] xl:w-[480px] shrink-0 border-r border-neutral-200' : 'flex-1'} flex flex-col bg-[#F3F3F1]`}>
                         <div className={`flex gap-1 px-3 pt-3 ${withMap ? '' : 'w-full max-w-3xl mx-auto'}`}>
                             {tabs.map((t) => (
                                 <button
