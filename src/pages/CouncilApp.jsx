@@ -2,7 +2,7 @@
 // Desktop: vlevo panel se záložkami, vpravo mapa okrsků s detailem.
 // Mobil: obsah podle spodní lišty (Přehled / Mapa / Zastupitelé / Koalice / Okrsky).
 // Bez mapy (Magistrát): jen panely na střed. ?demo spustí simulované sčítání.
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ElectionHeader from '../components/ElectionHeader';
 import ResultsMap from '../components/ResultsMap';
 import PartyResults from '../components/PartyResults';
@@ -167,6 +167,23 @@ export default function CouncilApp({ council }) {
             : `${council.name} · Volby 2026 · Piráti`;
     }, [model, council.name]);
 
+    // Každá záložka si pamatuje, kam byla odrolovaná (jinak se nová záložka
+    // otevřela v půlce, na pozici té předchozí). Klepnutí na už otevřenou
+    // záložku vyroluje nahoru — jako v nativních aplikacích.
+    const scrollRef = useRef(null);
+    const scrollPos = useRef({});
+    const switchTab = (id) => {
+        if (id === tab) {
+            scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        if (scrollRef.current) scrollPos.current[tab] = scrollRef.current.scrollTop;
+        setTab(id);
+    };
+    useLayoutEffect(() => {
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollPos.current[tab] || 0;
+    }, [tab]);
+
     // Detail okrsku na mobilu je spodní panel přes mapu — brouk by v něm
     // zakrýval čísla (viz BugReportWidget, body[data-sheet])
     const sheetOpen = isMobile && tab === 'map' && !!selectedId;
@@ -180,7 +197,7 @@ export default function CouncilApp({ council }) {
 
     const selectPrecinct = (id) => {
         setSelectedId(id);
-        if (isMobile && council.map) setTab('map');
+        if (isMobile && council.map) switchTab('map');
     };
 
     if (!ready || !model) {
@@ -269,7 +286,7 @@ export default function CouncilApp({ council }) {
                 }}
             />
             <Card className="p-4">
-                <SectionTitle right={<button onClick={() => setTab('councilors')} className="text-[11px] font-semibold text-black hover:underline">Kdo sedí kde →</button>}>
+                <SectionTitle right={<button onClick={() => switchTab('councilors')} className="text-[11px] font-semibold text-black hover:underline">Kdo sedí kde →</button>}>
                     Rozdělení mandátů
                 </SectionTitle>
                 {council.coalition ? (
@@ -325,7 +342,7 @@ export default function CouncilApp({ council }) {
             {isMobile ? (
                 <>
                     <main className="flex-1 min-h-0 relative">
-                        {activeTab === 'map' ? map : <div className="h-full overflow-y-auto px-3 pt-3 pb-20">{panels[activeTab]}</div>}
+                        {activeTab === 'map' ? map : <div ref={scrollRef} className="h-full overflow-y-auto px-3 pt-3 pb-20">{panels[activeTab]}</div>}
                     </main>
                     <nav
                         className="shrink-0 bg-white border-t border-neutral-200 grid pb-[env(safe-area-inset-bottom)] z-[1200]"
@@ -334,7 +351,7 @@ export default function CouncilApp({ council }) {
                         {tabs.map((t) => (
                             <button
                                 key={t.id}
-                                onClick={() => setTab(t.id)}
+                                onClick={() => switchTab(t.id)}
                                 className={`flex flex-col items-center gap-0.5 py-2 font-condensed text-[11px] font-bold ${activeTab === t.id ? 'text-black' : 'text-neutral-400'}`}
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -353,7 +370,7 @@ export default function CouncilApp({ council }) {
                             {tabs.map((t) => (
                                 <button
                                     key={t.id}
-                                    onClick={() => setTab(t.id)}
+                                    onClick={() => switchTab(t.id)}
                                     className={`flex-1 rounded-lg px-2 py-1.5 font-condensed text-sm font-bold uppercase tracking-wide transition-colors ${
                                         activeTab === t.id ? 'bg-black text-white' : 'text-neutral-500 hover:bg-white'
                                     }`}
@@ -362,7 +379,7 @@ export default function CouncilApp({ council }) {
                                 </button>
                             ))}
                         </div>
-                        <div className="flex-1 overflow-y-auto px-3 py-3">
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3">
                             <div className={withMap ? '' : 'max-w-3xl mx-auto'}>{panels[activeTab]}</div>
                         </div>
                     </aside>
