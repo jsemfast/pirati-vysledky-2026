@@ -1,6 +1,6 @@
 // Okrsky: pruh 52 okrsků (sečteno/nesečteno), detail okrsku, přehled
 // postupně přicházejících výsledků a ovládání mapy.
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { activeCouncil, colorOnDark, partyMeta } from '../volby/council';
 import { baselineShare, precinctShare, precinctWinner } from '../volby/compute';
 import { MAP_MODES, getMapMode, mapModesFor } from '../volby/mapModes';
@@ -58,13 +58,28 @@ export function PrecinctStrip({ geoJson, snapshot, freshIds, selectedId, onSelec
 
 export function MapControls({ modeId, onMode, partyId, onParty, parties, compact = false }) {
     const mode = getMapMode(modeId, { partyId });
+    // Mobil: režimy jsou vodorovně posuvný pruh — aktivní režim (i ten
+    // zapnutý zvenku, např. klepnutím na stranu v Přehledu) posunout do záběru
+    const rowRef = useRef(null);
+    useEffect(() => {
+        const row = rowRef.current;
+        const active = row?.querySelector('[aria-pressed="true"]');
+        if (!compact || !active) return;
+        const left = active.offsetLeft - (row.clientWidth - active.offsetWidth) / 2;
+        row.scrollTo({ left, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }, [modeId, compact]);
     return (
         <div className={`bg-white/95 backdrop-blur rounded-xl shadow-lg border border-neutral-200 ${compact ? 'p-2' : 'p-2.5'}`}>
-            <div className={`flex gap-1 ${compact ? 'overflow-x-auto -mx-1 px-1 [scrollbar-width:none]' : 'flex-wrap'}`}>
+            <div
+                ref={rowRef}
+                // na mobilu pravý okraj vybledne — je vidět, že pruh pokračuje
+                className={`relative flex gap-1 ${compact ? 'overflow-x-auto -mx-1 px-1 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)]' : 'flex-wrap'}`}
+            >
                 {mapModesFor(activeCouncil()).map((m) => (
                     <button
                         key={m.id}
                         onClick={() => onMode(m.id)}
+                        aria-pressed={modeId === m.id}
                         className={`rounded-lg font-semibold transition-colors whitespace-nowrap shrink-0 ${compact ? 'px-3 py-2 text-sm' : 'px-2 py-1 text-xs'} ${
                             modeId === m.id ? 'bg-[#000000] text-white' : 'text-neutral-600 hover:bg-neutral-100'
                         }`}
@@ -75,6 +90,7 @@ export function MapControls({ modeId, onMode, partyId, onParty, parties, compact
             </div>
             {modeId === 'party' && (
                 <select
+                    aria-label="Strana na mapě"
                     value={partyId}
                     onChange={(e) => onParty(Number(e.target.value))}
                     className="mt-2 w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm bg-white"
