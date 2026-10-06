@@ -1,6 +1,6 @@
 // Koalice: současná koalice (podle src/councils.js), skládačka vlastní
 // koalice a seznam všech minimálních většinových kombinací.
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { activeCouncil, partyMeta } from '../volby/council';
 import { sumSeats } from '../volby/compute';
 import { fmtInt, fmtPct, mandatesLabel } from '../volby/format';
@@ -167,6 +167,17 @@ export default function CoalitionPanel({ model }) {
     const isCurrent = (members) =>
         members.length === coalition.members.length && coalition.members.every((id) => members.includes(id));
     const toggle = (id) => setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    // Výběr ze seznamu přepíše skládačku nad ním — ta bývá odrolovaná mimo
+    // obrazovku, tak k ní posunout, ať je vidět, co se stalo
+    const builderRef = useRef(null);
+    const isPicked = (members) => members.length === picked.length && members.every((id) => picked.includes(id));
+    const pick = (members) => {
+        setPicked(members);
+        const el = builderRef.current;
+        if (el && el.getBoundingClientRect().top < 0) {
+            el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        }
+    };
 
     // Kdo z koalice je nejblíž dalšímu mandátu (kde se vyplatí přidat)
     const nearest = hasVotes
@@ -193,29 +204,31 @@ export default function CoalitionPanel({ model }) {
                 </Card>
             )}
 
-            <Card className="p-4">
-                <SectionTitle>Sestav si koalici</SectionTitle>
-                <div className="flex flex-wrap gap-1.5">
-                    {parties.map((p) => (
-                        <PartyChip key={p.id} id={p.id} active={picked.includes(p.id)} onClick={() => toggle(p.id)} size="md">
-                            {p.meta.short}{hasVotes ? ` · ${p.seats}` : ''}
-                        </PartyChip>
-                    ))}
-                </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                    <span className="font-display text-4xl leading-none tabular-nums">{hasVotes ? pickedSeats : '—'}</span>
-                    <span className="text-sm text-neutral-500">/ {council.seats}</span>
-                    <span className="ml-auto">{hasVotes && picked.length > 0 && <MajorityBadge seats={pickedSeats} />}</span>
-                </div>
-                <div className="mt-2">
-                    <SeatBar seatsById={hasVotes ? seatsById : {}} members={picked} />
-                </div>
-                {hasVotes && picked.length > 0 && (
-                    <div className="mt-2 text-[11px] text-neutral-500">
-                        Hlasy stran v koalici: {fmtPct(picked.reduce((s, id) => s + (model.byId[id]?.share || 0), 0))}
+            <div ref={builderRef} className="scroll-mt-3">
+                <Card className="p-4">
+                    <SectionTitle>Sestav si koalici</SectionTitle>
+                    <div className="flex flex-wrap gap-1.5">
+                        {parties.map((p) => (
+                            <PartyChip key={p.id} id={p.id} active={picked.includes(p.id)} onClick={() => toggle(p.id)} size="md">
+                                {p.meta.short}{hasVotes ? ` · ${p.seats}` : ''}
+                            </PartyChip>
+                        ))}
                     </div>
-                )}
-            </Card>
+                    <div className="mt-3 flex items-baseline gap-2">
+                        <span className="font-display text-4xl leading-none tabular-nums">{hasVotes ? pickedSeats : '—'}</span>
+                        <span className="text-sm text-neutral-500">/ {council.seats}</span>
+                        <span className="ml-auto">{hasVotes && picked.length > 0 && <MajorityBadge seats={pickedSeats} />}</span>
+                    </div>
+                    <div className="mt-2">
+                        <SeatBar seatsById={hasVotes ? seatsById : {}} members={picked} />
+                    </div>
+                    {hasVotes && picked.length > 0 && (
+                        <div className="mt-2 text-[11px] text-neutral-500">
+                            Hlasy stran v koalici: {fmtPct(picked.reduce((s, id) => s + (model.byId[id]?.share || 0), 0))}
+                        </div>
+                    )}
+                </Card>
+            </div>
 
             <Card className="p-4">
                 <SectionTitle
@@ -237,8 +250,11 @@ export default function CoalitionPanel({ model }) {
                         {list.map((c) => (
                             <li key={c.members.join('-')}>
                                 <button
-                                    onClick={() => setPicked(c.members)}
-                                    className="w-full flex items-center gap-2 py-2 text-left hover:bg-neutral-50 rounded-lg px-1"
+                                    onClick={() => pick(c.members)}
+                                    aria-pressed={isPicked(c.members)}
+                                    className={`w-full flex items-center gap-2 py-2.5 text-left rounded-lg px-1.5 ${
+                                        isPicked(c.members) ? 'bg-[#FFF6D1]' : 'hover:bg-neutral-50 active:bg-neutral-100'
+                                    }`}
                                 >
                                     <div className="flex flex-wrap gap-1 flex-1">
                                         {[...c.members]
