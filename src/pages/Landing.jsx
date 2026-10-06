@@ -215,7 +215,7 @@ function Hero({ snapshot, live, lists }) {
     const dataTime = DEMO ? snapshot?.fetchedAt : parseCsuTime(snapshot?.generated);
 
     let line;
-    if (phase === 'pre') line = <>Místnosti se zavírají v sobotu 10. 10. ve 14:00 — za <b className="text-[#FEC900]">{countdown(POLLS_CLOSE - now)}</b></>;
+    if (phase === 'pre') line = <>Místnosti se zavírají v sobotu 10. 10. ve 14:00 — za <b className="text-[#FEC900] whitespace-nowrap">{countdown(POLLS_CLOSE - now)}</b></>;
     else if (phase === 'waiting' || !p?.counted) line = 'Volby skončily — čekáme na první okrskové komise';
     else line = <>Sečteno <b className="text-white">{fmtInt(p.counted)}</b> z {fmtInt(p.total)} okrsků v MČ ({fmtPct(p.pct)})</>;
 
@@ -356,7 +356,8 @@ export default function Landing() {
                     </div>
                 )}
 
-                <div className="flex items-end justify-between gap-3">
+                {/* na telefonu se řazení zalomí pod nadpis, místo aby ho stlačilo do dvou řádků */}
+                <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
                     <h2 className="font-display text-3xl md:text-4xl tracking-wide leading-none">
                         Městské části s Piráty <span className="text-neutral-400">{OURS.length}</span>
                     </h2>
