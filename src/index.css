@@ -30,6 +30,19 @@ body,
   }
 }
 
+/* Fokus z klávesnice v pirátské žluté (myš a dotyk ho nevyvolají).
+   Šedé bliknutí při klepnutí (Android) nahrazují active: stavy prvků. */
+@layer base {
+  /* v base vrstvě, ať ho utility (outline-none u inputů a oken) můžou přebít */
+  :focus-visible {
+    outline: 3px solid #fec900;
+    outline-offset: 2px;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 body {
   overscroll-behavior: none;
   font-family: var(--font-sans);

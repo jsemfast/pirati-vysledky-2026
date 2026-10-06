@@ -117,7 +117,7 @@ function CouncilMenu({ demo }) {
                                         key={c.slug}
                                         href={`/${c.slug}${demo ? '?demo' : ''}`}
                                         aria-current={isCurrent ? 'page' : undefined}
-                                        className={`flex items-center justify-between rounded-xl px-3 py-2 ${isCurrent ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-800'}`}
+                                        className={`flex items-center justify-between rounded-xl px-3 py-2 ${isCurrent ? 'bg-black text-white' : 'hover:bg-neutral-100 active:bg-neutral-100 text-neutral-800'}`}
                                     >
                                         <span>
                                             <span className="block font-display text-xl leading-none tracking-wide">{c.magistrat ? 'Magistrát' : c.name}</span>
@@ -136,7 +136,7 @@ function CouncilMenu({ demo }) {
                                         key={c.slug}
                                         href={`/${c.slug}${demo ? '?demo' : ''}`}
                                         aria-current={c.slug === current?.slug ? 'page' : undefined}
-                                        className={`truncate rounded-lg px-3 py-2.5 text-sm ${c.slug === current?.slug ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                                        className={`truncate rounded-lg px-3 py-2.5 text-sm ${c.slug === current?.slug ? 'bg-black text-white' : 'hover:bg-neutral-100 active:bg-neutral-100 text-neutral-700'}`}
                                     >
                                         {c.name.replace(/^Praha-/, '')}
                                     </a>

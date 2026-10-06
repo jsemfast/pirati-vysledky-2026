@@ -257,7 +257,7 @@ export function ArrivalsFeed({ snapshot, arrivals, results2022, onSelect, freshI
                             <li key={id}>
                                 <button
                                     onClick={() => onSelect(id)}
-                                    className={`w-full flex items-center gap-2.5 py-2 px-1 text-left rounded-lg hover:bg-neutral-50 ${fresh.has(id) ? 'bg-[#FFF6D1]' : ''}`}
+                                    className={`w-full flex items-center gap-2.5 py-2 px-1 text-left rounded-lg hover:bg-neutral-50 active:bg-neutral-100 ${fresh.has(id) ? 'bg-[#FFF6D1]' : ''}`}
                                 >
                                     <span className="w-11 text-[11px] text-neutral-500 tabular-nums">{at ? fmtShortTime(at) : '—'}</span>
                                     <span className="text-sm font-bold text-neutral-900 tabular-nums">{id}</span>

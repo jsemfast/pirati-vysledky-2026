@@ -113,7 +113,7 @@ function PirateCard({ council, summary, lists, fresh }) {
     return (
         <a
             href={href(council)}
-            className={`group block min-w-0 rounded-2xl bg-white border p-4 shadow-sm hover:shadow-md hover:border-black transition ${
+            className={`group block min-w-0 rounded-2xl bg-white border p-4 shadow-sm hover:shadow-md hover:border-black active:bg-neutral-50 transition ${
                 fresh ? 'border-[#FEC900] ring-2 ring-[#FEC900]/60' : 'border-neutral-200'
             }`}
         >
@@ -250,7 +250,7 @@ function Hero({ snapshot, live, lists }) {
                                 : `Kandidujeme v ${OURS.length} z ${OURS.length + OTHERS.length} městských částí`}
                         </div>
                     </div>
-                    <a href={href(MAGISTRAT)} className="group rounded-2xl bg-white/[0.07] border border-white/10 hover:border-[#FEC900] p-4 transition">
+                    <a href={href(MAGISTRAT)} className="group rounded-2xl bg-white/[0.07] border border-white/10 hover:border-[#FEC900] active:bg-white/[0.12] p-4 transition">
                         <div className="flex items-center justify-between gap-2">
                             <div className="font-condensed text-xs font-bold uppercase tracking-wider text-[#FEC900]">Magistrát · kandidátka č. {MAGISTRAT.pirates}</div>
                             <span className="text-white/40 group-hover:text-[#FEC900]">→</span>
