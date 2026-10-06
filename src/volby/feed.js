@@ -1,4 +1,4 @@
-// Stahování průběžných výsledků KV 2026 za Prahu 3 z volby.gov.cz a jejich
+// Stahování průběžných výsledků KV 2026 jednoho zastupitelstva z volby.gov.cz a jejich
 // převod na kompaktní „snapshot". Běží ve dvou prostředích:
 //  - server (api/volby.js): podmíněné dotazy přes If-None-Match, výsledek
 //    sdílí všichni klienti přes CDN cache,
@@ -13,7 +13,7 @@ import { KV_BASE_URL, POLLS_CLOSE } from '../councils.js';
 
 export const SNAPSHOT_VERSION = 1;
 
-const pathsFor = ({ okres, zastup }) => ({
+export const pathsFor = ({ okres, zastup }) => ({
     results: `vysled/${okres}/${zastup}.json`,
     turnout: `ucast/obec/${okres}/${zastup}.json`,
     precinct: (id) => `vysled/okrsek/${okres}/${zastup}_${id}.json`,
@@ -51,7 +51,7 @@ function electedFlag(v) {
 // vysledky: [č., název, hlasy, %, kandidátů, přepočtený základ,
 //            přepočtené %, mandátů, % mandátů, …]
 // hlasy[strana]: [pořadí, jméno, věk, hlasy, %, mandát, pořadí zvolení]
-function normalizeResults(json, council) {
+export function normalizeResults(json, council) {
     const p = json.prehled || [];
     const fullNames = new Map((json.plne_nazvy_stran || []).map((r) => [r[0], r[1]]));
     const official = json.zvoleno === true;
@@ -132,7 +132,7 @@ function timeoutSignal(ms) {
 }
 
 // Jednoduchý limiter souběžných dotazů sdílený napříč běhy build()
-function createLimiter(max) {
+export function createLimiter(max) {
     let active = 0;
     const queue = [];
     const next = () => {
@@ -150,35 +150,24 @@ function createLimiter(max) {
     });
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const sameVotes = (a, b) => !!a && !!b && Object.keys(a).length === Object.keys(b).length
     && Object.keys(a).every((k) => a[k] === b[k]);
 
-// council = položka z src/councils.js (zastup, okres, seats, precincts,
-// precinctFiles — u Magistrátu se okrskové soubory nestahují)
-export function createKvFeed({
-    council,
+// Podmíněné stahování JSONů z volby.gov.cz s pamětí: každý soubor nejvýš
+// jednou za minIntervalMs (maxAgeMs), po chybě se soubor chvíli nezkouší
+// a souběžné dotazy na stejný soubor se sdílí. Vrací getJson(path).
+export function createJsonCache({
     fetchImpl = (...args) => fetch(...args),
     conditional = true,
     baseUrl = KV_BASE_URL,
     minIntervalMs = 20000,
-    concurrency = 6,
     timeoutMs = 8000,
-    // jak dlouho build() čeká na okrskové soubory, než vrátí snapshot bez
-    // nich (dotahují se dál na pozadí a přibudou v dalším běhu)
-    precinctWaitMs = 3000,
     headers = {},
 } = {}) {
     const files = new Map(); // path -> { etag, lastModified, json, checkedAt }
     const failures = new Map(); // path -> { at, error } — po chybě chvíli nezkoušet
     const fetching = new Map(); // path -> běžící dotaz (souběžná volání ho sdílí)
-    const precincts = new Map(); // okrsek -> { sig, votes }
-    const pending = new Map(); // okrsek -> běžící stažení
-    const attempts = new Map(); // okrsek -> počet pokusů o změněný okrsek
-    const limit = createLimiter(concurrency);
-    const PATHS = pathsFor(council);
-    let last = null;
-    let inflight = null;
 
     async function getJson(path, { maxAgeMs = minIntervalMs } = {}) {
         const entry = files.get(path);
@@ -227,6 +216,33 @@ export function createKvFeed({
             throw error;
         }
     }
+
+    return getJson;
+}
+
+// council = položka z src/councils.js (zastup, okres, seats, precincts,
+// precinctFiles — u Magistrátu se okrskové soubory nestahují)
+export function createKvFeed({
+    council,
+    fetchImpl = (...args) => fetch(...args),
+    conditional = true,
+    baseUrl = KV_BASE_URL,
+    minIntervalMs = 20000,
+    concurrency = 6,
+    timeoutMs = 8000,
+    // jak dlouho build() čeká na okrskové soubory, než vrátí snapshot bez
+    // nich (dotahují se dál na pozadí a přibudou v dalším běhu)
+    precinctWaitMs = 3000,
+    headers = {},
+} = {}) {
+    const getJson = createJsonCache({ fetchImpl, conditional, baseUrl, minIntervalMs, timeoutMs, headers });
+    const precincts = new Map(); // okrsek -> { sig, votes }
+    const pending = new Map(); // okrsek -> běžící stažení
+    const attempts = new Map(); // okrsek -> počet pokusů o změněný okrsek
+    const limit = createLimiter(concurrency);
+    const PATHS = pathsFor(council);
+    let last = null;
+    let inflight = null;
 
     // Stažení jednoho okrsku. Uloží se jen data, která odpovídají aktuálnímu
     // řádku v přehledu účasti: součet hlasů = platné hlasy, a u okrsku

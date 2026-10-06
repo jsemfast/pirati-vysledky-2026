@@ -30,24 +30,28 @@ function maplibreWorkerAssets() {
   }
 }
 
-// V devu pouštíme stejnou serverovou funkci jako na Vercelu (api/volby.js),
-// ať se lokálně testuje i cesta přes proxy.
-function apiVolbyDev() {
+// V devu pouštíme stejné serverové funkce jako na Vercelu (api/volby.js,
+// api/prehled.js), ať se lokálně testuje i cesta přes proxy.
+const API_FUNCTIONS = ['volby', 'prehled']
+
+function apiDev() {
   return {
-    name: 'api-volby-dev',
+    name: 'api-dev',
     configureServer(server) {
-      server.middlewares.use('/api/volby', async (req, res, next) => {
-        try {
-          const { default: handler } = await server.ssrLoadModule('/api/volby.js')
-          await handler(req, res)
-        } catch (err) {
-          next(err)
-        }
-      })
+      for (const name of API_FUNCTIONS) {
+        server.middlewares.use(`/api/${name}`, async (req, res, next) => {
+          try {
+            const { default: handler } = await server.ssrLoadModule(`/api/${name}.js`)
+            await handler(req, res)
+          } catch (err) {
+            next(err)
+          }
+        })
+      }
     },
   }
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), maplibreWorkerAssets(), apiVolbyDev()],
+  plugins: [react(), tailwindcss(), maplibreWorkerAssets(), apiDev()],
 })

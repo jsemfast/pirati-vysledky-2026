@@ -50,6 +50,7 @@ function MajorityBadge({ seats }) {
 export function CoalitionHero({ model }) {
     const { coalition, seatsById, hasVotes, official, ours, snapshot, council } = model;
     const baseLabel = ours?.meta.baseline?.label || 'předchůdce';
+    if (!ours && !council.coalition) return null;
     return (
         <Card className="overflow-hidden">
             {ours && (
@@ -95,33 +96,35 @@ export function CoalitionHero({ model }) {
                 </div>
             )}
 
-            <div className="p-4">
-                <div className="flex items-center justify-between gap-2">
-                    <div className="font-condensed text-xs font-bold uppercase tracking-wider text-neutral-500">Současná koalice</div>
-                    {hasVotes ? <MajorityBadge seats={coalition.seats} /> : <span className="text-[11px] text-neutral-400">čeká na výsledky</span>}
-                </div>
-                <div className="mt-1 flex items-baseline gap-2">
-                    <span className={`font-display text-5xl leading-none tabular-nums ${hasVotes ? 'text-neutral-900' : 'text-neutral-300'}`}>{hasVotes ? coalition.seats : coalition.seats2022}</span>
-                    <span className="text-sm text-neutral-500">/ {hasVotes ? council.seats : coalition.seatsTotal2022} mandátů{hasVotes ? '' : ' v 2022'}</span>
-                    {hasVotes && <span className="ml-auto text-[11px] text-neutral-400">2022: {coalition.seats2022}/{coalition.seatsTotal2022}</span>}
-                </div>
-                <div className="mt-2.5">
-                    <SeatBar seatsById={hasVotes ? seatsById : {}} members={coalition.members} />
-                </div>
-                <div className="mt-1.5 text-[11px] text-neutral-500">{coalition.label} · většina {coalition.majority} z {council.seats}</div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                    {coalition.members.map((id) => (
-                        <PartyChip key={id} id={id}>
-                            {partyMeta(id).short} {hasVotes ? `· ${seatsById[id] || 0}` : ''}
-                        </PartyChip>
-                    ))}
-                </div>
-                {hasVotes && !official && (
-                    <div className="mt-2 text-[11px] text-neutral-400">
-                        Odhad z {snapshot.precincts.counted} / {snapshot.precincts.total} sečtených okrsků — může se ještě hýbat.
+            {council.coalition && (
+                <div className="p-4">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="font-condensed text-xs font-bold uppercase tracking-wider text-neutral-500">Současná koalice</div>
+                        {hasVotes ? <MajorityBadge seats={coalition.seats} /> : <span className="text-[11px] text-neutral-400">čeká na výsledky</span>}
                     </div>
-                )}
-            </div>
+                    <div className="mt-1 flex items-baseline gap-2">
+                        <span className={`font-display text-5xl leading-none tabular-nums ${hasVotes ? 'text-neutral-900' : 'text-neutral-300'}`}>{hasVotes ? coalition.seats : coalition.seats2022}</span>
+                        <span className="text-sm text-neutral-500">/ {hasVotes ? council.seats : coalition.seatsTotal2022} mandátů{hasVotes ? '' : ' v 2022'}</span>
+                        {hasVotes && <span className="ml-auto text-[11px] text-neutral-400">2022: {coalition.seats2022}/{coalition.seatsTotal2022}</span>}
+                    </div>
+                    <div className="mt-2.5">
+                        <SeatBar seatsById={hasVotes ? seatsById : {}} members={coalition.members} />
+                    </div>
+                    <div className="mt-1.5 text-[11px] text-neutral-500">{coalition.label} · většina {coalition.majority} z {council.seats}</div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                        {coalition.members.map((id) => (
+                            <PartyChip key={id} id={id}>
+                                {partyMeta(id).short} {hasVotes ? `· ${seatsById[id] || 0}` : ''}
+                            </PartyChip>
+                        ))}
+                    </div>
+                    {hasVotes && !official && (
+                        <div className="mt-2 text-[11px] text-neutral-400">
+                            Odhad z {snapshot.precincts.counted} / {snapshot.precincts.total} sečtených okrsků — může se ještě hýbat.
+                        </div>
+                    )}
+                </div>
+            )}
         </Card>
     );
 }
@@ -154,7 +157,7 @@ export function LastSeatCard({ model }) {
 export default function CoalitionPanel({ model }) {
     const { seatsById, coalitions, hasVotes, parties, council, coalition } = model;
     const [picked, setPicked] = useState(coalition.members);
-    const [onlyOurs, setOnlyOurs] = useState(true);
+    const [onlyOurs, setOnlyOurs] = useState(!!council.pirates);
 
     const pickedSeats = sumSeats(seatsById, picked);
     const list = useMemo(
@@ -216,12 +219,12 @@ export default function CoalitionPanel({ model }) {
 
             <Card className="p-4">
                 <SectionTitle
-                    right={
+                    right={council.pirates && (
                         <label className="flex items-center gap-1.5 text-[11px] text-neutral-500 cursor-pointer">
                             <input type="checkbox" checked={onlyOurs} onChange={(e) => setOnlyOurs(e.target.checked)} className="accent-[#000000]" />
                             jen s Piráty
                         </label>
-                    }
+                    )}
                 >
                     Možné většinové koalice
                 </SectionTitle>

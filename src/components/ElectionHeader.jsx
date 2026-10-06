@@ -1,23 +1,13 @@
 // Hlavička výsledkové stránky: stav živých dat, odpočet do další kontroly,
 // ruční obnovení, pruh okrsků a přepínač zastupitelstev.
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useNow } from '../hooks/useNow';
 import { COUNCILS, POLLS_CLOSE } from '../councils';
 import { activeCouncil } from '../volby/council';
 import { countdown, fmtPct, fmtShortTime, fmtTime, parseCsuTime } from '../volby/format';
 import { PrecinctStrip } from './Precincts';
 
-function useNow(ms) {
-    const [now, setNow] = useState(() => Date.now());
-    useEffect(() => {
-        const t = setInterval(() => {
-            if (!document.hidden) setNow(Date.now());
-        }, ms);
-        return () => clearInterval(t);
-    }, [ms]);
-    return now;
-}
-
-function StatusPill({ phase, demo, stale }) {
+export function StatusPill({ phase, demo, stale }) {
     const base = 'font-condensed rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wider';
     if (demo) return <span className={`${base} bg-[#FEC900] text-black`}>DEMO</span>;
     if (stale) return <span className={`${base} bg-orange-500 text-white`}>OFFLINE</span>;
@@ -61,18 +51,18 @@ function CouncilMenu({ demo }) {
                             </button>
                         </div>
                         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-                            <div className="font-condensed px-3 pt-1 pb-2 text-xs font-bold uppercase tracking-wider text-neutral-400">Zastupitelstvo</div>
-                            {COUNCILS.map((c) => {
+                            <div className="font-condensed px-3 pt-1 pb-2 text-xs font-bold uppercase tracking-wider text-neutral-400">Piráti kandidují</div>
+                            {COUNCILS.filter((c) => c.pirates).map((c) => {
                                 const isCurrent = c.slug === current?.slug;
                                 return (
                                     <a
                                         key={c.slug}
                                         href={`/${c.slug}${demo ? '?demo' : ''}`}
-                                        className={`flex items-center justify-between rounded-xl px-3 py-2.5 ${isCurrent ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-800'}`}
+                                        className={`flex items-center justify-between rounded-xl px-3 py-2 ${isCurrent ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-800'}`}
                                     >
                                         <span>
-                                            <span className="block font-display text-2xl leading-none tracking-wide">{c.name}</span>
-                                            <span className={`block text-xs ${isCurrent ? 'text-white/60' : 'text-neutral-500'}`}>
+                                            <span className="block font-display text-xl leading-none tracking-wide">{c.magistrat ? 'Magistrát' : c.name}</span>
+                                            <span className={`block text-[11px] ${isCurrent ? 'text-white/60' : 'text-neutral-500'}`}>
                                                 {c.seats} mandátů · {c.precincts} okrsků{c.beta ? ' · beta' : ''}
                                             </span>
                                         </span>
@@ -80,6 +70,18 @@ function CouncilMenu({ demo }) {
                                     </a>
                                 );
                             })}
+                            <div className="font-condensed px-3 pt-4 pb-2 text-xs font-bold uppercase tracking-wider text-neutral-400">Ostatní městské části</div>
+                            <div className="grid grid-cols-2 gap-1">
+                                {COUNCILS.filter((c) => !c.pirates).map((c) => (
+                                    <a
+                                        key={c.slug}
+                                        href={`/${c.slug}${demo ? '?demo' : ''}`}
+                                        className={`truncate rounded-lg px-3 py-1.5 text-sm ${c.slug === current?.slug ? 'bg-black text-white' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                                    >
+                                        {c.name.replace(/^Praha-/, '')}
+                                    </a>
+                                ))}
+                            </div>
                             <div className="pt-2 mt-2 border-t border-neutral-100 space-y-1">
                                 <a href={demo ? `/${current?.slug || ''}` : `/${current?.slug || ''}?demo`} className="block rounded-xl px-3 py-2.5 hover:bg-[#FFF6D1] text-neutral-800">
                                     <div className="text-sm font-semibold">{demo ? 'Ukončit demo' : 'Demo sčítání'}</div>
@@ -87,7 +89,7 @@ function CouncilMenu({ demo }) {
                                         {demo ? 'zpět na skutečná data z volby.gov.cz' : 'simulace večera z dat 2022 — na vyzkoušení'}
                                     </div>
                                 </a>
-                                <a href="/" className="block rounded-xl px-3 py-2.5 hover:bg-neutral-100 text-neutral-800">
+                                <a href={demo ? '/?demo' : '/'} className="block rounded-xl px-3 py-2.5 hover:bg-neutral-100 text-neutral-800">
                                     <div className="text-sm font-semibold">Přehled všech zastupitelstev</div>
                                 </a>
                             </div>
@@ -128,7 +130,7 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
         <header className="bg-black text-white shrink-0 z-[1200] relative">
             <div className="px-4 pt-3 pb-2.5 md:px-5">
                 <div className="flex items-center gap-3">
-                    <a href="/" className="shrink-0" aria-label="Přehled zastupitelstev">
+                    <a href={demo ? '/?demo' : '/'} className="shrink-0" aria-label="Přehled zastupitelstev">
                         <img src="/brand/logo-full-white.svg" alt="Piráti" className="h-6 sm:h-7 md:h-8" />
                     </a>
                     <div className="min-w-0 flex-1 border-l border-white/20 pl-3">
