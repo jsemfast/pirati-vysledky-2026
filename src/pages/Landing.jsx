@@ -91,7 +91,7 @@ function Progress({ summary, dark = false }) {
 function CountBadge({ summary }) {
     if (!summary || summary.phase === 'pre') return null;
     if (summary.official) return <span className="rounded bg-emerald-600 text-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">konečné</span>;
-    if (!summary.counted) return <span className="text-[11px] text-neutral-400 whitespace-nowrap">čeká na okrsky</span>;
+    if (!summary.counted) return <span className="text-[11px] text-neutral-500 whitespace-nowrap">čeká na okrsky</span>;
     return (
         <span className="text-[11px] tabular-nums text-neutral-500 whitespace-nowrap">
             <b className="text-neutral-900">{summary.counted}</b>/{summary.total} okrsků
@@ -113,7 +113,7 @@ function PirateCard({ council, summary, lists, fresh }) {
     return (
         <a
             href={href(council)}
-            className={`group block rounded-2xl bg-white border p-4 shadow-sm hover:shadow-md hover:border-black transition ${
+            className={`group block min-w-0 rounded-2xl bg-white border p-4 shadow-sm hover:shadow-md hover:border-black active:bg-neutral-50 transition ${
                 fresh ? 'border-[#FEC900] ring-2 ring-[#FEC900]/60' : 'border-neutral-200'
             }`}
         >
@@ -130,7 +130,7 @@ function PirateCard({ council, summary, lists, fresh }) {
 
             <div className="mt-3 flex items-end justify-between gap-3">
                 <div className="min-w-0">
-                    <div className={`font-display text-5xl leading-none tabular-nums ${live ? 'text-black' : 'text-neutral-300'}`}>{fmtPct(pct)}</div>
+                    <div className={`font-display text-5xl leading-none tabular-nums whitespace-nowrap ${live ? 'text-black' : 'text-neutral-400'}`}>{fmtPct(pct)}</div>
                     <div className="mt-1 text-[11px] text-neutral-500 truncate">
                         {!live
                             ? list?.pct2022 !== null && list?.pct2022 !== undefined
@@ -143,7 +143,7 @@ function PirateCard({ council, summary, lists, fresh }) {
                 </div>
                 <div className={`shrink-0 rounded-xl px-3 py-1.5 text-right ${live ? 'bg-black text-[#FEC900]' : 'bg-neutral-100 text-neutral-400'}`}>
                     <div className="font-display text-4xl leading-none tabular-nums">{seats ?? '–'}</div>
-                    <div className={`text-[10px] ${live ? 'text-white/60' : ''}`}>
+                    <div className={`text-[11px] ${live ? 'text-white/70' : ''}`}>
                         {!live ? `${seatsWord(seats ?? 0)} 2022` : summary.official ? seatsWord(seats) : `${seatsWord(seats)} · odhad`}
                     </div>
                 </div>
@@ -169,7 +169,8 @@ function PirateCard({ council, summary, lists, fresh }) {
     );
 }
 
-// Řádek MČ, kde Piráti nekandidují: stav sčítání a kdo vede
+// Dlaždice MČ, kde Piráti nekandidují: stav sčítání a kdo vede. Dva
+// sloupce i na telefonu — 36 řádků přes celou šířku bylo přes dva metry rolování.
 function OtherRow({ council, summary, lists, fresh }) {
     const live = summary?.votes > 0;
     const [leadId, leadVotes, leadSeats] = live ? summary.parties[0] : [];
@@ -177,22 +178,20 @@ function OtherRow({ council, summary, lists, fresh }) {
     return (
         <a
             href={href(council)}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 bg-white border hover:border-black transition ${fresh ? 'border-[#FEC900] ring-1 ring-[#FEC900]' : 'border-neutral-200'}`}
+            className={`block min-w-0 rounded-xl px-3 py-2.5 bg-white border hover:border-black active:bg-neutral-50 transition ${fresh ? 'border-[#FEC900] ring-1 ring-[#FEC900]' : 'border-neutral-200'}`}
         >
-            <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-neutral-900 truncate">{council.name.replace(/^Praha-/, '')}</div>
-                <div className="text-[11px] text-neutral-500 truncate">
-                    {live ? (
-                        <>
-                            <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ backgroundColor: lead?.color || '#6B7280' }} />
-                            {lead?.tiny || `č. ${leadId}`} {fmtPct((leadVotes / summary.votes) * 100)} · {leadSeats}/{council.seats}
-                        </>
-                    ) : (
-                        `${council.seats} mandátů · ${council.precincts} ${plural(council.precincts, 'okrsek', 'okrsky', 'okrsků')}`
-                    )}
-                </div>
+            <div className="text-sm font-semibold text-neutral-900 truncate">{council.name.replace(/^Praha-/, '')}</div>
+            <div className="text-[11px] text-neutral-500 truncate">
+                {live ? (
+                    <>
+                        <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ backgroundColor: lead?.color || '#6B7280' }} />
+                        {lead?.tiny || `č. ${leadId}`} {fmtPct((leadVotes / summary.votes) * 100)} · {leadSeats}/{council.seats}
+                    </>
+                ) : (
+                    `${council.seats} mandátů · ${council.precincts} ${plural(council.precincts, 'okrsek', 'okrsky', 'okrsků')}`
+                )}
             </div>
-            <div className="shrink-0 text-right whitespace-nowrap"><CountBadge summary={summary} /></div>
+            {summary && summary.phase !== 'pre' && <div className="mt-1"><CountBadge summary={summary} /></div>}
         </a>
     );
 }
@@ -215,7 +214,7 @@ function Hero({ snapshot, live, lists }) {
     const dataTime = DEMO ? snapshot?.fetchedAt : parseCsuTime(snapshot?.generated);
 
     let line;
-    if (phase === 'pre') line = <>Místnosti se zavírají v sobotu 10. 10. ve 14:00 — za <b className="text-[#FEC900]">{countdown(POLLS_CLOSE - now)}</b></>;
+    if (phase === 'pre') line = <>Místnosti se zavírají v sobotu 10. 10. ve 14:00 — za <b className="text-[#FEC900] whitespace-nowrap">{countdown(POLLS_CLOSE - now)}</b></>;
     else if (phase === 'waiting' || !p?.counted) line = 'Volby skončily — čekáme na první okrskové komise';
     else line = <>Sečteno <b className="text-white">{fmtInt(p.counted)}</b> z {fmtInt(p.total)} okrsků v MČ ({fmtPct(p.pct)})</>;
 
@@ -236,7 +235,7 @@ function Hero({ snapshot, live, lists }) {
                 <div className="mt-3 text-sm text-white/70">{line}</div>
                 {phase !== 'pre' && p?.total > 0 && <div className="mt-2 max-w-md"><Progress summary={{ counted: p.counted, total: p.total }} dark /></div>}
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl bg-white/[0.07] border border-white/10 p-4">
                         <div className="font-condensed text-xs font-bold uppercase tracking-wider text-[#FEC900]">Piráti v městských částech</div>
                         <div className="mt-2 flex items-baseline gap-2">
@@ -251,7 +250,7 @@ function Hero({ snapshot, live, lists }) {
                                 : `Kandidujeme v ${OURS.length} z ${OURS.length + OTHERS.length} městských částí`}
                         </div>
                     </div>
-                    <a href={href(MAGISTRAT)} className="group rounded-2xl bg-white/[0.07] border border-white/10 hover:border-[#FEC900] p-4 transition">
+                    <a href={href(MAGISTRAT)} className="group rounded-2xl bg-white/[0.07] border border-white/10 hover:border-[#FEC900] active:bg-white/[0.12] p-4 transition">
                         <div className="flex items-center justify-between gap-2">
                             <div className="font-condensed text-xs font-bold uppercase tracking-wider text-[#FEC900]">Magistrát · kandidátka č. {MAGISTRAT.pirates}</div>
                             <span className="text-white/40 group-hover:text-[#FEC900]">→</span>
@@ -348,15 +347,16 @@ export default function Landing() {
         <div className="min-h-dvh bg-[#F3F3F1] text-neutral-900 overflow-y-auto">
             <Hero snapshot={snapshot} live={live} lists={lists} />
 
-            <main className="max-w-5xl mx-auto px-4 md:px-5 pt-5 pb-12">
+            <main className="max-w-5xl mx-auto px-4 md:px-5 pt-5 pb-24">
                 {DEMO && (
                     <div className="mb-4 rounded-xl bg-[#FFF6D1] border border-[#FEC900] text-neutral-900 text-xs px-3 py-2">
                         <b>Demo</b> — simulované sčítání odvozené z výsledků 2022, ne skutečná data ani predikce.{' '}
-                        <a href="/?demo" className="underline font-semibold">Spustit znovu</a> · <a href="/" className="underline">Skutečné výsledky</a>
+                        <a href="/?demo" className="inline-block py-1.5 -my-1.5 underline font-semibold">Spustit znovu</a> · <a href="/" className="inline-block py-1.5 -my-1.5 underline">Skutečné výsledky</a>
                     </div>
                 )}
 
-                <div className="flex items-end justify-between gap-3">
+                {/* na telefonu se řazení zalomí pod nadpis, místo aby ho stlačilo do dvou řádků */}
+                <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
                     <h2 className="font-display text-3xl md:text-4xl tracking-wide leading-none">
                         Městské části s Piráty <span className="text-neutral-400">{OURS.length}</span>
                     </h2>
@@ -366,7 +366,8 @@ export default function Landing() {
                                 <button
                                     key={id}
                                     onClick={() => setSort(id)}
-                                    className={`px-2.5 py-1 rounded-md ${sort === id ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
+                                    aria-pressed={sort === id}
+                                    className={`px-3 py-2 rounded-md ${sort === id ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
                                 >
                                     {label}
                                 </button>
@@ -374,7 +375,7 @@ export default function Landing() {
                         </div>
                     )}
                 </div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {ours.map((c) => (
                         <PirateCard key={c.slug} council={c} summary={s[c.zastup]} lists={lists[c.zastup]} fresh={fresh.has(String(c.zastup))} />
                     ))}
@@ -388,7 +389,7 @@ export default function Landing() {
                     Ostatní městské části <span className="text-neutral-400">{OTHERS.length}</span>
                 </h2>
                 <p className="mt-1 text-xs text-neutral-500">Piráti tu letos nekandidují — výsledky všech kandidátek po rozkliknutí.</p>
-                <div className="mt-3 grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-3 grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                     {OTHERS.map((c) => (
                         <OtherRow key={c.slug} council={c} summary={s[c.zastup]} lists={lists[c.zastup]} fresh={fresh.has(String(c.zastup))} />
                     ))}
@@ -419,7 +420,7 @@ export default function Landing() {
                 </section>
                 <footer className="mt-10 pt-4 border-t border-neutral-200 flex items-center justify-between text-xs text-neutral-400">
                     <span>Verze {APP_VERSION} · data ČSÚ (volby.gov.cz)</span>
-                    <button onClick={openChangelog} className="font-semibold text-black hover:underline">Co je nové</button>
+                    <button onClick={openChangelog} className="py-2 -my-2 font-semibold text-black hover:underline">Co je nové</button>
                 </footer>
             </main>
         </div>

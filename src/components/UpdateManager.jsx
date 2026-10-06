@@ -4,12 +4,19 @@
 // 2. Po první návštěvě v nové verzi jednou ukáže „Co je nové".
 import React, { useCallback, useEffect, useState } from 'react';
 import { APP_VERSION } from '../changelog';
+import { POLLS_CLOSE } from '../councils';
 import { CHANGELOG_OPEN_EVENT } from '../utils/openChangelog';
 import { useUpdateCheck } from '../hooks/useUpdateCheck';
 import ChangelogModal from './ChangelogModal';
 
 const SEEN_KEY = 'kv26_seen_version'; // poslední verze, jejíž novinky uživatel viděl
 const RELOADED_KEY = 'kv26_reloaded_for'; // pojistka proti reload smyčce (session)
+
+// Volební večer (od 2 h před koncem hlasování do půlnoci další den): opravy
+// se nasazují za chodu a po každé by přes živé výsledky vyskočily novinky.
+// V tu dobu se samy neukazují (zůstávají v menu) a ukážou se až po něm.
+const ELECTION_NIGHT = [POLLS_CLOSE - 2 * 3600e3, POLLS_CLOSE + 34 * 3600e3];
+const isElectionNight = () => Date.now() >= ELECTION_NIGHT[0] && Date.now() < ELECTION_NIGHT[1];
 
 const isEditing = () => {
     const el = document.activeElement;
@@ -30,7 +37,7 @@ export default function UpdateManager() {
         } catch {
             /* private mode */
         }
-        return seen && seen !== APP_VERSION
+        return seen && seen !== APP_VERSION && !isElectionNight()
             ? { open: true, afterUpdate: true, since: seen }
             : { open: false, afterUpdate: false, since: null };
     });
@@ -107,13 +114,14 @@ export default function UpdateManager() {
     return (
         <>
             {newVersion && (
-                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[4000] bg-black text-white text-sm font-medium rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3 max-w-[calc(100vw-2rem)]">
+                // na mobilu nad spodní lištou záložek, ne přes ni
+                <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] mobile:bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-[4000] bg-black text-white text-sm font-medium rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3 max-w-[calc(100vw-2rem)]">
                     {reloadBlocked ? (
                         <>
                             <span>Je k dispozici nová verze {newVersion}.</span>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="shrink-0 bg-[#FEC900] text-black text-xs font-bold rounded-lg px-3 py-1.5"
+                                className="shrink-0 bg-[#FEC900] text-black text-sm font-bold rounded-lg px-3 py-2"
                             >
                                 Obnovit
                             </button>

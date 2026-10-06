@@ -1,7 +1,7 @@
 // Mapa okrsků s průběžnými výsledky. Nesečtené okrsky šedě s čárkovaným
 // okrajem, čerstvě sečtené krátce zablikají žlutě. Najetí myší = náhled
 // (top strany v okrsku), klik = detail okrsku.
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -11,9 +11,18 @@ import { UNCOUNTED_FILL } from '../volby/colors';
 import { activeCouncil, partyMeta } from '../volby/council';
 import { baselineShare } from '../volby/compute';
 import { fmtPct, fmtShortTime } from '../volby/format';
+import { reducedMotion } from '../utils/motion';
 
 function FitBounds({ data, padTop = 12 }) {
     const map = useMap();
+    // Odsazení shora (výška ovládání mapy) se na mobilu změří až po mountu —
+    // napasování o chvilku později už vezme změřenou hodnotu. Změna výšky
+    // ovládání (přepnutí režimu) ale mapu znovu nepasuje, uživatel ji mohl
+    // mezitím posunout.
+    const padRef = useRef(padTop);
+    useEffect(() => {
+        padRef.current = padTop;
+    }, [padTop]);
     useEffect(() => {
         if (!data) return undefined;
         const bounds = L.geoJSON(data).getBounds();
@@ -22,12 +31,49 @@ function FitBounds({ data, padTop = 12 }) {
         // Leaflet během běžící animace zoomu další fitBounds ignoruje.
         const fit = () => {
             map.invalidateSize();
-            map.fitBounds(bounds, { paddingTopLeft: [6, padTop], paddingBottomRight: [6, 6], animate: false });
+            map.fitBounds(bounds, { paddingTopLeft: [6, padRef.current], paddingBottomRight: [6, 6], animate: false });
         };
         fit();
         const t = setTimeout(fit, 200);
         return () => clearTimeout(t);
-    }, [data, map, padTop]);
+    }, [data, map]);
+    return null;
+}
+
+// Vybraný okrsek nesmí zůstat schovaný pod ovládáním mapy nebo pod detailem
+// okrsku (na mobilu spodní panel) — posunout ho do viditelného pruhu mezi nimi
+function FocusSelected({ data, selectedId, insetTop, insetBottom }) {
+    const map = useMap();
+    useEffect(() => {
+        if (!selectedId || !data) return undefined;
+        const feature = data.features.find((f) => String(f.properties.cislo) === selectedId);
+        if (!feature) return undefined;
+        // počkat, až se panel s detailem vykreslí a změří
+        const t = setTimeout(() => {
+            const size = map.getSize();
+            const top = insetTop;
+            const bottom = size.y - insetBottom;
+            if (bottom - top < 48) return;
+            const p = map.latLngToContainerPoint(L.geoJSON(feature).getBounds().getCenter());
+            const dx = p.x < 24 || p.x > size.x - 24 ? p.x - size.x / 2 : 0;
+            const dy = p.y < top + 16 || p.y > bottom - 16 ? p.y - (top + bottom) / 2 : 0;
+            if (dx || dy) map.panBy([dx, dy], { animate: !reducedMotion() });
+        }, 60);
+        return () => clearTimeout(t);
+    }, [map, data, selectedId, insetTop, insetBottom]);
+    return null;
+}
+
+// Klepnutí do mapy mimo okrsky zavře detail okrsku
+function BackgroundClick({ onClick }) {
+    const map = useMap();
+    useEffect(() => {
+        if (!onClick) return undefined;
+        map.on('click', onClick);
+        return () => {
+            map.off('click', onClick);
+        };
+    }, [map, onClick]);
     return null;
 }
 
@@ -85,6 +131,9 @@ export default function ResultsMap({
     arrivals,
     isMobile,
     historical = false,
+    insetTop = 12,
+    insetBottom = 0,
+    onBackgroundClick,
 }) {
     const okrsky = snapshot?.okrsky || {};
     const mode = useMemo(() => getMapMode(modeId, { partyId, results2022 }), [modeId, partyId, results2022]);
@@ -146,8 +195,11 @@ export default function ResultsMap({
             <SizeWatcher />
             {geoJson && (
                 <>
-                    <GeoJSON key={version} data={geoJson} style={style} onEachFeature={onEachFeature} />
-                    <FitBounds data={geoJson} padTop={isMobile ? 96 : 12} />
+                    {/* bubblingMouseEvents: klik na okrsek nesmí probublat do mapy (ta detail zavírá) */}
+                    <GeoJSON key={version} data={geoJson} style={style} onEachFeature={onEachFeature} bubblingMouseEvents={false} />
+                    <FitBounds data={geoJson} padTop={insetTop} />
+                    <FocusSelected data={geoJson} selectedId={selectedId} insetTop={insetTop} insetBottom={insetBottom} />
+                    <BackgroundClick onClick={onBackgroundClick} />
                 </>
             )}
         </MapContainer>

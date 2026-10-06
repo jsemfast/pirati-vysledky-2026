@@ -14,6 +14,7 @@
 // Použití:  npm run data                  (všechna zastupitelstva)
 //           npm run data -- praha-6        (jen jedno)
 //           npm run data -- --fresh        (ignorovat .cache/)
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import proj4 from 'proj4';
@@ -244,13 +245,14 @@ async function buildCouncil(council, { ros2026, rk2026, ros2022, t3, hl, geo, pa
         }
         usedColors.push(color);
 
-        // Loga: Piráti vždy pirátským logem (kampaňová loga kandidátek ne) →
-        // logo kandidátky → samostatná strana → loga členských stran (max 3)
-        let logoUrls = l.slozeni.includes(PIRATES_CODE)
-            ? [pick((await partyInfo(PIRATES_CODE))?.$data, 'logo')].filter(Boolean)
-            : [pick(p?.$data, 'logo')].filter(Boolean);
+        // Loga: vlastní logo kandidátky z programydovoleb.cz (i u společných
+        // kandidátek s Piráty — EDITA PRO PRAHU 3, MY pro Prahu 14…) → loga
+        // členských stran (max 3, Piráti první: Piráti + STAN). Čistě pirátská
+        // kandidátka bez vlastního loga tak dostane pirátskou vlajku.
+        let logoUrls = [pick(p?.$data, 'logo')].filter(Boolean);
         if (!logoUrls.length) {
-            for (const code of memberCodes.slice(0, 3)) {
+            const byPirates = [...memberCodes].sort((a, b) => (b === PIRATES_CODE) - (a === PIRATES_CODE));
+            for (const code of byPirates.slice(0, 3)) {
                 const url = pick((await partyInfo(code))?.$data, 'logo');
                 if (url) logoUrls.push(url);
             }
@@ -399,8 +401,11 @@ async function saveMedia(url, dir, base, kind) {
         const out = kind === 'logo'
             ? img.resize({ width: 320, height: 160, fit: 'inside', withoutEnlargement: true }).webp({ quality: 88 })
             : img.resize({ width: 240, height: 360, fit: 'cover', position: 'top' }).webp({ quality: 78 });
-        await fs.writeFile(path.join(dir, file), await out.toBuffer());
-        return file;
+        const buf = await out.toBuffer();
+        await fs.writeFile(path.join(dir, file), buf);
+        // Logo se může vyměnit pod stejným jménem (1-0.webp) a /media/* se
+        // cachuje den — otisk obsahu v adrese, ať prohlížeč nevezme staré
+        return kind === 'logo' ? `${file}?v=${createHash('sha1').update(buf).digest('hex').slice(0, 8)}` : file;
     } catch (err) {
         console.warn(`  ! ${url}: ${err.message}`);
         return null;

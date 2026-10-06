@@ -27,7 +27,7 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
         <Card className="p-4">
             <SectionTitle
                 right={
-                    <span className="text-[10px] text-neutral-400">
+                    <span className="text-[11px] text-neutral-500">
                         {hasVotes ? (official ? 'oficiální mandáty' : 'mandáty = odhad z průběžných čísel') : 'v závorce KV 2022'}
                     </span>
                 }
@@ -40,17 +40,20 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                     const below = hasVotes && !p.passed;
                     const selected = selectedParty === p.id;
                     const exact = p.meta.baseline?.exact;
+                    // Bez mapy (Magistrát) klepnutí na stranu nemá co ukázat — pak jen řádek
+                    const Row = onSelectParty ? 'button' : 'div';
                     return (
-                        <button
+                        <Row
                             key={p.id}
-                            onClick={() => onSelectParty?.(p.id)}
-                            className={`w-full text-left rounded-xl px-2.5 py-2 transition-colors ${
-                                ours ? 'bg-[#FFF6D1]' : selected ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+                            {...(onSelectParty ? { type: 'button', onClick: () => onSelectParty(p.id), 'aria-pressed': selected } : {})}
+                            className={`block w-full text-left rounded-xl px-2.5 py-2 transition-colors ${
+                                ours ? 'bg-[#FFF6D1]' : selected ? 'bg-neutral-100' : onSelectParty ? 'hover:bg-neutral-50 active:bg-neutral-100' : ''
                             } ${below ? 'opacity-60' : ''}`}
                         >
                             <div className="flex items-center gap-2">
                                 <PartyLogo id={p.id} size={20} />
-                                <span className={`text-sm truncate flex-1 ${ours ? 'font-bold text-black' : 'font-semibold text-neutral-800'}`} title={p.fullName}>
+                                {/* celý název kandidátky, nejvýš na dva řádky (na telefonu se dlouhé názvy useknou) */}
+                                <span className={`text-sm leading-tight line-clamp-2 break-words min-w-0 flex-1 ${ours ? 'font-bold text-black' : 'font-semibold text-neutral-800'}`} title={p.fullName}>
                                     {p.meta.short}
                                 </span>
                                 {hasVotes ? (
@@ -61,7 +64,7 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                                             title={official ? 'Mandáty' : 'Odhad mandátů'}
                                         >
                                             {p.seats}
-                                            <span className="text-[10px] font-semibold text-neutral-400 ml-0.5">m.</span>
+                                            <span className="text-[11px] font-semibold text-neutral-500 ml-0.5">m.</span>
                                         </span>
                                     </>
                                 ) : (
@@ -115,16 +118,16 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                                     {below && <span className="ml-auto font-semibold text-red-600">pod {threshold} %</span>}
                                 </div>
                             )}
-                        </button>
+                        </Row>
                     );
                 })}
             </div>
             {many && (
-                <button onClick={() => setShowAll((v) => !v)} className="mt-2 text-xs font-semibold text-black hover:underline">
+                <button onClick={() => setShowAll((v) => !v)} className="mt-1 py-2.5 text-sm font-semibold text-black hover:underline">
                     {showAll ? 'Skrýt menší kandidátky' : `Zobrazit všech ${parties.length} kandidátek`}
                 </button>
             )}
-            <div className="mt-2 flex items-center gap-3 text-[10px] text-neutral-400">
+            <div className="mt-2 flex items-center gap-3 text-[11px] text-neutral-500">
                 <span className="flex items-center gap-1">
                     <span className="inline-block w-3 border-t-2 border-neutral-400/70" />
                     KV 2022{model.baselineScope ? ` (stejných ${model.baselineScope} okrsků)` : ''}

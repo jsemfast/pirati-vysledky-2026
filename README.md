@@ -77,7 +77,17 @@ Konfigurace); jinde se karta koalice a režim mapy „Koalice" neukazují.
 - **Demo sčítání** — `?demo` (nebo `?demo=60` = délka v sekundách) přehraje
   celý večer na datech 2022. Čísla v demu nejsou predikce.
 - **Mobil first** — spodní lišta záložek, mapa přes celou obrazovku, bottom
-  sheet s detailem okrsku.
+  sheet s detailem okrsku. Mobilní rozložení dostane i telefon na šířku
+  (`MOBILE_QUERY` v [`useIsMobile.js`](src/hooks/useIsMobile.js) = varianta
+  `mobile:` v [`index.css`](src/index.css) — držet v souladu). Dotykové cíle
+  aspoň 40–44 px, záložky si pamatují vlastní pozici scrollu a otevřená
+  záložka + vybraný okrsek jsou v URL (`#mapa:3021`), takže přežijí vynucené
+  obnovení po nasazení. Mapa (MapLibre + Leaflet) se stahuje zvlášť, přehled
+  ji nenačítá. **Na telefonu je mapa ve výchozím stavu vypnutá** (~1 MB dat
+  + dlaždice při posunu): záložka Mapa nabídne „Zapnout mapu", vypnout jde
+  v mapě nebo přepínačem v menu, volba je v `localStorage`
+  ([`useMapPreference.js`](src/hooks/useMapPreference.js)). Bez mapy se detail
+  okrsku otevře jako spodní panel nad seznamem okrsků.
 
 | Desktop (Praha 6, demo) | Mobil (Praha 3, demo) |
 |---|---|
@@ -315,7 +325,9 @@ přes `x-vercel-cache`.
 ## Nahlášení chyby (brouk)
 
 Plovoucí tlačítko vpravo dole na všech stránkách
-([`BugReportWidget`](src/components/BugReportWidget.jsx)): název, popis
+([`BugReportWidget`](src/components/BugReportWidget.jsx)) — na mobilu při
+rolování dolů uhne, ať nezakrývá čísla, a při otevřeném detailu okrsku se
+schová (`body[data-sheet]`): název, popis
 a volitelný screenshot (přetažením, výběrem souboru nebo Ctrl+V; zmenší se
 na JPEG ≤ 1600 px / 3 MB). Odešle se na `/api/bug`
 ([`api/bug.js`](api/bug.js)), které založí **issue v tomhle repu** s labely
@@ -336,6 +348,8 @@ a zařízení. Token GitHubu je jen na serveru.
 - [ ] `x-cache: HIT` na `/api/prehled` a na `/api/volby?z=…` (aspoň Magistrát a MČ s Piráty).
 - [ ] Brouk: testovací hlášení se screenshotem založí issue (pak ho zavřít).
 - [ ] Přehled `/?demo` na mobilu: karty MČ, řazení, souhrn mandátů.
+- [ ] Mobil na šířku (`/<slug>?demo#mapa`): spodní lišta, mapa, detail okrsku vpravo.
+- [ ] Mobil s vypnutou mapou: záložka Mapa → Zapnout mapu; Okrsky → klepnutí na okrsek otevře panel s detailem.
 - [ ] Billing Vercel týmu v pořádku (žádná neuhrazená faktura).
 - [ ] V sobotu po 14:00 první okrsky: zkontrolovat, že čísla sedí s volby.gov.cz/app/kv2026.
 - [ ] Po vyhlášení mandátů ČSÚ: zkontrolovat, že se přepnulo na „oficiální mandáty".

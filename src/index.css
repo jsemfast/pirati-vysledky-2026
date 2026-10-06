@@ -9,6 +9,11 @@
   --color-pirate: #fec900;
 }
 
+/* Mobilní rozložení — stejný dotaz jako MOBILE_QUERY v src/hooks/useIsMobile.js
+   (úzký displej nebo telefon na šířku). `short:` = nízký displej na šířku. */
+@custom-variant mobile (@media (max-width: 767px), (pointer: coarse) and (max-height: 500px));
+@custom-variant short (@media (pointer: coarse) and (max-height: 500px));
+
 html,
 body,
 #root {
@@ -25,6 +30,19 @@ body,
   }
 }
 
+/* Fokus z klávesnice v pirátské žluté (myš a dotyk ho nevyvolají).
+   Šedé bliknutí při klepnutí (Android) nahrazují active: stavy prvků. */
+@layer base {
+  /* v base vrstvě, ať ho utility (outline-none u inputů a oken) můžou přebít */
+  :focus-visible {
+    outline: 3px solid #fec900;
+    outline-offset: 2px;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 body {
   overscroll-behavior: none;
   font-family: var(--font-sans);
@@ -33,7 +51,7 @@ body {
 }
 
 /* iOS zoomuje na inputy s písmem < 16px — na mobilu je držíme na 16px */
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) {
   input,
   select,
   textarea {
@@ -130,4 +148,22 @@ body {
 }
 .okrsek-fresh {
   animation: okrsek-flash 3s ease-out 2;
+}
+
+/* Vypnuté animace v systému: nic nebliká ani nepulzuje, rolování skokem.
+   Čerstvě sečtený okrsek zůstane jen staticky žlutě orámovaný. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .okrsek-fresh {
+    animation: none;
+    stroke: #fec900;
+    stroke-width: 3px;
+  }
 }

@@ -4,6 +4,7 @@
 // a časová past (viz api/bug.js).
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BugReportScreenshotError, prepareScreenshot, submitBugReport } from '../volby/bugReport';
+import { useDialog } from '../hooks/useDialog';
 
 // Stejný brouk jako v ostatních projektech (czexpats-connect)
 function BugIcon({ className = 'w-5 h-5' }) {
@@ -19,9 +20,34 @@ function BugIcon({ className = 'w-5 h-5' }) {
     );
 }
 
+// Brouk na mobilu překrývá pravý sloupec čísel (mandáty, procenta) — při
+// posouvání dolů uhne, při posunu nahoru (nebo nahoře na stránce) se vrátí.
+// Scroll událost nebublá, proto capture na dokumentu: chytí i vnitřní
+// posuvné panely stránky zastupitelstva.
+function useHideOnScroll() {
+    const [hidden, setHidden] = useState(false);
+    useEffect(() => {
+        const last = new WeakMap();
+        const onScroll = (e) => {
+            const el = e.target === document ? document.scrollingElement : e.target;
+            // rolování uvnitř menu nebo jiného okna se stránky netýká
+            if (!el || typeof el.scrollTop !== 'number' || el.closest('[role=dialog]')) return;
+            const y = el.scrollTop;
+            const prev = last.get(el) ?? 0;
+            last.set(el, y);
+            if (y < 40 || y < prev) setHidden(false);
+            else if (y > prev) setHidden(true);
+        };
+        document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+        return () => document.removeEventListener('scroll', onScroll, { capture: true });
+    }, []);
+    return hidden;
+}
+
 // raised = stránka zastupitelstva: na mobilu nad spodní lištou záložek,
 // na desktopu nad atribucí mapy
 export default function BugReportWidget({ raised = false }) {
+    const scrolledAway = useHideOnScroll();
     const [open, setOpen] = useState(false);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -48,6 +74,10 @@ export default function BugReportWidget({ raised = false }) {
         }
     }, []);
 
+    // Esc, zámek scrollu pod oknem a fokus (i na obrazovce „Chyba nahlášena")
+    const close = useCallback(() => setOpen(false), []);
+    const dialogRef = useDialog(open, close);
+
     // Screenshot ze schránky (Ctrl+V / ⌘V) kdekoli, když je formulář otevřený
     useEffect(() => {
         if (!open || result) return undefined;
@@ -58,15 +88,8 @@ export default function BugReportWidget({ raised = false }) {
                 addFile(file);
             }
         };
-        const onKey = (e) => {
-            if (e.key === 'Escape') setOpen(false);
-        };
         window.addEventListener('paste', onPaste);
-        window.addEventListener('keydown', onKey);
-        return () => {
-            window.removeEventListener('paste', onPaste);
-            window.removeEventListener('keydown', onKey);
-        };
+        return () => window.removeEventListener('paste', onPaste);
     }, [open, result, addFile]);
 
     const openForm = () => {
@@ -107,8 +130,9 @@ export default function BugReportWidget({ raised = false }) {
         }
     };
 
+    // stejné přepnutí na mobilní rozložení jako CouncilApp (i telefon na šířku)
     const position = raised
-        ? 'right-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-9'
+        ? 'right-3 bottom-9 mobile:bottom-[calc(4.5rem+env(safe-area-inset-bottom))] short:bottom-[calc(3.25rem+env(safe-area-inset-bottom))]'
         : 'right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))]';
 
     return (
@@ -118,7 +142,10 @@ export default function BugReportWidget({ raised = false }) {
                     onClick={openForm}
                     aria-label="Nahlásit chybu"
                     title="Nahlásit chybu"
-                    className={`fixed ${position} z-[2500] w-11 h-11 rounded-full bg-black text-[#FEC900] shadow-lg ring-2 ring-white/70 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform`}
+                    // body[data-sheet] = na mobilu je otevřený detail okrsku přes mapu
+                    className={`fixed ${position} z-[2500] w-11 h-11 rounded-full bg-black text-[#FEC900] shadow-lg ring-2 ring-white/70 flex items-center justify-center hover:scale-105 active:scale-95 transition-[transform,opacity] duration-200 [body[data-sheet]_&]:hidden ${
+                        scrolledAway ? 'translate-y-24 opacity-0 pointer-events-none' : ''
+                    }`}
                 >
                     <BugIcon className="w-6 h-6" />
                 </button>
@@ -127,10 +154,12 @@ export default function BugReportWidget({ raised = false }) {
             {open && (
                 <div className="fixed inset-0 z-[3600] bg-black/40 flex items-end sm:items-center sm:justify-end sm:p-4" onClick={() => setOpen(false)}>
                     <div
+                        ref={dialogRef}
+                        tabIndex={-1}
                         role="dialog"
                         aria-modal="true"
                         aria-label="Formulář pro nahlášení chyby"
-                        className="w-full sm:w-[400px] max-h-[90dvh] overflow-y-auto bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl"
+                        className="w-full sm:w-[400px] max-h-[90dvh] overflow-y-auto overscroll-contain bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl outline-none pb-[env(safe-area-inset-bottom)] sm:pb-0"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="sticky top-0 bg-black text-white px-4 py-3 flex items-center justify-between">
@@ -138,7 +167,7 @@ export default function BugReportWidget({ raised = false }) {
                                 <BugIcon className="w-5 h-5 text-[#FEC900]" />
                                 Nahlásit chybu
                             </span>
-                            <button onClick={() => setOpen(false)} aria-label="Zavřít" className="p-2 -m-2 text-white/60 hover:text-white">
+                            <button onClick={close} aria-label="Zavřít" className="p-3 -m-3 text-white/60 hover:text-white">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -207,7 +236,7 @@ export default function BugReportWidget({ raised = false }) {
                                                     setScreenshot(null);
                                                     if (fileRef.current) fileRef.current.value = '';
                                                 }}
-                                                className="absolute top-1.5 right-1.5 rounded-full bg-black/80 text-white text-xs px-2 py-0.5"
+                                                className="absolute top-1.5 right-1.5 rounded-full bg-black/80 text-white text-sm px-3 py-1.5"
                                             >
                                                 Odebrat
                                             </button>
@@ -231,8 +260,10 @@ export default function BugReportWidget({ raised = false }) {
                                                 dragging ? 'border-[#FEC900] bg-[#FFF6D1]' : 'border-neutral-300 text-neutral-500 hover:border-neutral-500'
                                             }`}
                                         >
-                                            Přetáhni screenshot sem, vlož <b>Ctrl+V</b> nebo <span className="underline font-semibold text-black">vyber soubor</span>
-                                            <span className="block text-[11px] text-neutral-400 mt-0.5">PNG, JPG, GIF, WebP</span>
+                                            {/* na dotykovém displeji nejde přetahovat ani Ctrl+V */}
+                                            <span className="pointer-coarse:hidden">Přetáhni screenshot sem, vlož <b>Ctrl+V</b> nebo <span className="underline font-semibold text-black">vyber soubor</span></span>
+                                            <span className="hidden pointer-coarse:inline"><span className="underline font-semibold text-black">Vyber screenshot</span> z galerie</span>
+                                            <span className="block text-[11px] text-neutral-500 mt-0.5">PNG, JPG, GIF, WebP</span>
                                         </button>
                                     )}
                                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => addFile(e.target.files?.[0])} />
@@ -247,7 +278,7 @@ export default function BugReportWidget({ raised = false }) {
                                 >
                                     {submitting ? 'Odesílám…' : 'Odeslat hlášení'}
                                 </button>
-                                <p className="text-[11px] text-neutral-400 text-center">
+                                <p className="text-[11px] text-neutral-500 text-center">
                                     Hlášení se zveřejní jako issue na GitHubu (bez tvého jména). Přidáme adresu stránky, prohlížeč a verzi aplikace.
                                 </p>
                             </form>
