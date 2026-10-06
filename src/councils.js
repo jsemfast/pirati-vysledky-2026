@@ -96,7 +96,8 @@ const MAGISTRAT = 554782;
  *               2026; seats2022 = kolik měla mandátů po volbách 2022
  * lists       – zkrácené názvy kandidátek (short = seznamy, tiny = mapa/čipy),
  *               volitelně barva; co tu chybí, vezme se z registru ČSÚ
- *               a programydovoleb.cz
+ *               a programydovoleb.cz. Pirátské kandidátce short nepřepisovat —
+ *               má se ukazovat celý název kandidátky z registru, jen tiny.
  * photos      – vlastní fotky kandidátů (public/media/<slug>/photos/),
  *               mají přednost před fotkami z programydovoleb.cz
  * map         – mapa okrsků (u Magistrátu zatím vypnutá, viz docs/MAGISTRAT.md)
@@ -111,7 +112,8 @@ const DETAIL = {
             seatsTotal2022: 35,
         },
         lists: {
-            1: { short: 'Piráti', tiny: 'Piráti', note: 'Společná kandidátka Pirátů, PRAHA 3 SOBĚ a Edity Janečkové' },
+            // název kandidátky z registru (Piráti, PRAHA 3 SOBĚ a Edita Janečková)
+            1: { tiny: 'Piráti + P3 sobě' },
             2: { short: 'ANO', tiny: 'ANO' },
             3: { short: 'Motoristé + Patrioti', tiny: 'Motoristé' },
             4: { short: 'Praha 3 srdcem', tiny: 'P3 srdcem', note: 'KDU-ČSL + GEN' },
@@ -151,7 +153,7 @@ const DETAIL = {
             1: { short: 'STAN', tiny: 'STAN' },
             2: { short: 'GEN', tiny: 'GEN' },
             3: { short: 'KSČM', tiny: 'KSČM' },
-            4: { short: 'Piráti', tiny: 'Piráti' },
+            4: { tiny: 'Piráti' },
             5: { short: 'SPD', tiny: 'SPD' },
             6: { short: 'PRAHA 6 SOBĚ', tiny: 'P6 sobě', note: 'PRAHA SOBĚ se Zelenými', color: '#FBDC02' },
             7: { short: 'ODS + KDU-ČSL', tiny: 'ODS+KDU', color: '#2868E6' },
@@ -178,7 +180,7 @@ const DETAIL = {
             3: { short: 'GEN', tiny: 'GEN' },
             4: { short: 'PRAHA 11 SOBĚ', tiny: 'P11 sobě' },
             5: { short: 'Spolu pro Prahu 11 (ODS)', tiny: 'ODS', color: '#2868E6' },
-            6: { short: 'Piráti', tiny: 'Piráti' },
+            6: { tiny: 'Piráti' },
             7: { short: 'Výzva pro Prahu 11', tiny: 'Výzva' },
             8: { short: 'Hnutí pro Prahu 11', tiny: 'HPP 11' },
             9: { short: 'SPD + Trikolora', tiny: 'SPD' },
@@ -202,7 +204,7 @@ const DETAIL = {
         },
         lists: {
             5: { short: 'PRAHA SOBĚ', tiny: 'PS' },
-            7: { short: 'Piráti', tiny: 'Piráti' },
+            7: { tiny: 'Piráti' },
             9: { short: 'STAN', tiny: 'STAN' },
             10: { short: 'SPD', tiny: 'SPD' },
             11: { short: 'GEN', tiny: 'GEN' },

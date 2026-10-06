@@ -52,7 +52,8 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                         >
                             <div className="flex items-center gap-2">
                                 <PartyLogo id={p.id} size={20} />
-                                <span className={`text-sm truncate flex-1 ${ours ? 'font-bold text-black' : 'font-semibold text-neutral-800'}`} title={p.fullName}>
+                                {/* celý název kandidátky, nejvýš na dva řádky (na telefonu se dlouhé názvy useknou) */}
+                                <span className={`text-sm leading-tight line-clamp-2 break-words min-w-0 flex-1 ${ours ? 'font-bold text-black' : 'font-semibold text-neutral-800'}`} title={p.fullName}>
                                     {p.meta.short}
                                 </span>
                                 {hasVotes ? (

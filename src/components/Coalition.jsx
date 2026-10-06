@@ -51,6 +51,10 @@ function MajorityBadge({ seats }) {
 export function CoalitionHero({ model }) {
     const { coalition, seatsById, hasVotes, official, ours, snapshot, council } = model;
     const baseLabel = ours?.meta.baseline?.label || 'předchůdce';
+    // Společná kandidátka (Piráti a Starostové, Piráti, PRAHA 3 SOBĚ a Edita
+    // Janečková…) má vlastní název — pirátské logo nad ním by bez něj tvrdilo,
+    // že jde o samotné Piráty
+    const listName = ours && !/^(Česká pirátská strana|Piráti)$/i.test(ours.meta.name || '') ? ours.meta.name : null;
     if (!ours && !council.coalition) return null;
     return (
         <Card className="overflow-hidden">
@@ -64,7 +68,8 @@ export function CoalitionHero({ model }) {
                                     kandidátka č. {ours.id}
                                 </span>
                             </div>
-                            {ours.meta.note && <div className="mt-1 text-[11px] text-white/55">{ours.meta.note}</div>}
+                            {listName && <div className="mt-1.5 text-sm font-semibold leading-snug text-white">{listName}</div>}
+                            {ours.meta.note && <div className="mt-0.5 text-[11px] text-white/60">{ours.meta.note}</div>}
                             {/* procento ani změna se nesmí zalomit (na 320 px se lámalo „20,4 / %“) */}
                             <div className="mt-1 flex flex-wrap items-baseline gap-x-3">
                                 <span className={`font-display text-5xl min-[360px]:text-6xl leading-none tabular-nums whitespace-nowrap ${hasVotes ? '' : 'text-white/35'}`}>{fmtPct(hasVotes ? ours.share : ours.baseline)}</span>

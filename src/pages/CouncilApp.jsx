@@ -16,7 +16,7 @@ import { setMapEnabled, useMapEnabled } from '../hooks/useMapPreference';
 import { useDialog } from '../hooks/useDialog';
 import { buildModel, emptySnapshot, precincts2022 } from '../volby/model';
 import { createDemoFeed } from '../volby/demo';
-import { setActiveCouncil } from '../volby/council';
+import { partyMeta, setActiveCouncil } from '../volby/council';
 import { turnout2022 } from '../volby/compute';
 import { POLLS_CLOSE } from '../councils';
 import { countdown, fmtInt, fmtPct } from '../volby/format';
@@ -409,7 +409,7 @@ export default function CouncilApp({ council }) {
                 {council.coalition ? (
                     <Hemicycle model={model} highlight={model.coalition.members} centerLabel="současná koalice" />
                 ) : (
-                    <Hemicycle model={model} highlight={council.pirates ? [council.pirates] : null} centerLabel={council.pirates ? 'Piráti' : undefined} />
+                    <Hemicycle model={model} highlight={council.pirates ? [council.pirates] : null} centerLabel={council.pirates ? partyMeta(council.pirates).tiny : undefined} />
                 )}
             </Card>
             <LastSeatCard model={model} />
