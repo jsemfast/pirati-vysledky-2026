@@ -1,0 +1,66 @@
+# Produkce = Cloudflare Workers (cloudflare/). Každý push do main se nasadí,
+# takže produkce vždy odpovídá main. Ručně: Actions → Deploy → Run workflow.
+#
+# Secret repa: CLOUDFLARE_API_TOKEN (šablona „Edit Cloudflare Workers");
+# account_id je ve cloudflare/wrangler.jsonc (není tajné).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Nasazení jedno po druhém, rozjeté se nepřerušuje
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://pirati-vysledky-2026.pirati-vysledky-2026-cloudflare.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            cloudflare/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci
+          npm ci --prefix cloudflare
+
+      - name: Lint
+        run: npm run lint
+
+      # build (vite) + wrangler deploy; zpráva verze = commit
+      - name: Deploy
+        working-directory: cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy -- --message "$GITHUB_SHA"
+
+      - name: Smoke test
+        run: |
+          base=https://pirati-vysledky-2026.pirati-vysledky-2026-cloudflare.workers.dev
+          want=$(node -p "require('./dist/version.json').version")
+          for i in $(seq 1 12); do
+            got=$(curl -fsS "$base/version.json?t=$RANDOM" | node -p "JSON.parse(require('fs').readFileSync(0)).version" || true)
+            [ "$got" = "$want" ] && break
+            sleep 10
+          done
+          echo "nasazená verze: $got (čekáno $want)"
+          [ "$got" = "$want" ]
+          curl -fsS -o /dev/null "$base/api/prehled"
+          curl -fsS -o /dev/null "$base/praha-3"

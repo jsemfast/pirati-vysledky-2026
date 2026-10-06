@@ -8,6 +8,15 @@
 
 export const CHANGELOG = [
     {
+        version: '1.3.0',
+        date: '2026-10-06',
+        title: 'Nahlášení chyby',
+        items: [
+            { type: 'new', text: 'Brouk vpravo dole — chybu nahlásíš přímo z aplikace, i se screenshotem (přetažením, výběrem nebo Ctrl+V)' },
+            { type: 'improved', text: 'Každá změna se nasazuje automaticky, takže web vždy odpovídá aktuální verzi' },
+        ],
+    },
+    {
         version: '1.2.0',
         date: '2026-10-06',
         title: 'Verzování a šetrnější obnovování',

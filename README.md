@@ -279,29 +279,62 @@ Jak to funguje:
   automaticky ukáže přehled novinek od jeho poslední viděné verze
   (`localStorage.kv26_seen_version`).
 
-## Nasazení (Vercel)
+## Nasazení
 
-Projekt je čistý Vite + jedna serverless funkce, žádné proměnné prostředí
-ani databáze nepotřebuje.
+**Produkce běží na Cloudflare Workers** (`cloudflare/`, viz
+[cloudflare/README.md](cloudflare/README.md)) a **nasazuje se automaticky:**
+každý push do `main` spustí GitHub Action
+[`deploy.yml`](.github/workflows/deploy.yml) — lint, build, `wrangler
+deploy`, ověření nasazené verze (`/version.json`). Produkce tak vždy odpovídá
+`main`. Ručně: GitHub → Actions → Deploy → Run workflow, nebo lokálně
+`npm run deploy` ve složce `cloudflare/`.
+
+Produkce: <https://pirati-vysledky-2026.pirati-vysledky-2026-cloudflare.workers.dev>
+
+| Kde | Secret | K čemu |
+|---|---|---|
+| GitHub repo (Settings → Secrets → Actions) | `CLOUDFLARE_API_TOKEN` | nasazení z GitHub Action (šablona tokenu „Edit Cloudflare Workers") |
+| Cloudflare Worker (`npx wrangler secret put GITHUB_TOKEN` v `cloudflare/`) | `GITHUB_TOKEN` | brouk zakládá issues (fine-grained token jen na tohle repo, Issues: Read and write) |
+
+V repu žádné klíče nejsou — `account_id` ve `wrangler.jsonc` není tajný.
+
+Ověření cache — druhý dotaz musí vrátit `x-cache: HIT`:
 
 ```bash
-npm i -g vercel           # případně npx vercel
-vercel link               # vyber tým (doporučen placený — viz Kapacita)
-vercel deploy             # preview
-vercel deploy --prod      # produkce
+curl -sI "https://<doména>/api/prehled" | grep -i x-cache
+curl -sI "https://<doména>/api/volby?z=500097" | grep -i x-cache
 ```
 
-Po nasazení ověř CDN cache — druhý dotaz do 30 s musí vrátit `HIT` nebo `STALE`:
+### Alternativa: Vercel
 
-```bash
-curl -sI "https://<doména>/api/volby?z=500097" | grep -i x-vercel-cache
-```
+Aplikace jde nasadit i na Vercel (`vercel.json` je udržovaný: rewrite slugů,
+funkce, hlavičky) — `vercel link` a `vercel deploy --prod`. Brouk tam
+zakládá issues bez screenshotů (úložiště je jen na Cloudflare). Cache ověř
+přes `x-vercel-cache`.
+
+## Nahlášení chyby (brouk)
+
+Plovoucí tlačítko vpravo dole na všech stránkách
+([`BugReportWidget`](src/components/BugReportWidget.jsx)): název, popis
+a volitelný screenshot (přetažením, výběrem souboru nebo Ctrl+V; zmenší se
+na JPEG ≤ 1600 px / 3 MB). Odešle se na `/api/bug`
+([`api/bug.js`](api/bug.js)), které založí **issue v tomhle repu** s labely
+`bug` a `z-aplikace` — přidá adresu stránky, verzi aplikace, prohlížeč
+a zařízení. Token GitHubu je jen na serveru.
+
+- Proti spamu: honeypot, časová past (formulář za < 2 s = robot, dostane
+  falešné „OK"), limit 5 hlášení / 15 min / IP.
+- Screenshoty ukládá worker do Workers KV (`HLASENI`) a servíruje je na
+  `/hlaseni/<rok>/<měsíc>/<uuid>.jpg` — v issue se zobrazí jako obrázek.
+- Bez `GITHUB_TOKEN` vrací endpoint 503 „Nahlašování chyb zatím není
+  nastavené" (lokální dev bez tokenu, Vercel bez env).
 
 ### Checklist na volební den
 
-- [ ] Do čtvrtka nasazeno na produkci, prošlé `/<slug>?demo` na mobilu i desktopu.
+- [ ] Do čtvrtka nasazeno na produkci (poslední běh Actions → Deploy zelený), prošlé `/<slug>?demo` na mobilu i desktopu.
 - [ ] Koalice v `src/councils.js` odpovídají realitě.
-- [ ] `x-vercel-cache: HIT` na `/api/prehled` a na `/api/volby?z=…` (aspoň Magistrát a MČ s Piráty).
+- [ ] `x-cache: HIT` na `/api/prehled` a na `/api/volby?z=…` (aspoň Magistrát a MČ s Piráty).
+- [ ] Brouk: testovací hlášení se screenshotem založí issue (pak ho zavřít).
 - [ ] Přehled `/?demo` na mobilu: karty MČ, řazení, souhrn mandátů.
 - [ ] Billing Vercel týmu v pořádku (žádná neuhrazená faktura).
 - [ ] V sobotu po 14:00 první okrsky: zkontrolovat, že čísla sedí s volby.gov.cz/app/kv2026.
@@ -327,7 +360,10 @@ v roce 2022 nesedělo ~1 100 kandidátů).
 ```
 api/volby.js              serverless proxy s CDN cache (whitelist zastupitelstev)
 api/prehled.js            přehled všech zastupitelstev (souhrny, výsledek Pirátů)
+api/bug.js                nahlášení chyby → GitHub issue (brouk)
 api/_http.js              sdílené hlavičky / Cache-Control funkcí
+cloudflare/               produkční Worker (statika, API přes Durable Object, KV screenshotů)
+.github/workflows/deploy.yml  autodeploy main → Cloudflare
 scripts/build-data.js     generování statických dat (ČSÚ + programydovoleb.cz)
 scripts/verify-2022.js    ověření výpočtu na výsledcích 2022
 src/councils.js           konfigurace zastupitelstev (ručně)
