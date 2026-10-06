@@ -19,6 +19,7 @@ export const CHANGELOG = [
             { type: 'improved', text: 'Větší tlačítka a odkazy pro prst, křesla v půlkruhu jde vybrat i přejetím prstem' },
             { type: 'improved', text: 'Záložky si pamatují, kam jsi odroloval/a; otevřená záložka a okrsek přežijí obnovení stránky' },
             { type: 'improved', text: 'Brouk při rolování uhne a nezakrývá čísla; čitelnější drobný text' },
+            { type: 'new', text: 'Na telefonu je mapa okrsků vypnutá a šetří data (zhruba 1 MB) i baterii — zapneš ji jedním klepnutím v záložce Mapa nebo v menu, volba se pamatuje' },
             { type: 'improved', text: 'Přehled se načte zhruba čtyřikrát rychleji — mapa se stahuje, až když je potřeba' },
             { type: 'improved', text: 'Během volebního večera se po aktualizaci novinky neotevírají přes výsledky' },
         ],

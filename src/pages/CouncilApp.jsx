@@ -12,6 +12,8 @@ import { ArrivalsFeed, MapControls, PrecinctDetail } from '../components/Precinc
 import { Card, SectionTitle } from '../components/ui';
 import { councilSource, useLiveResults } from '../hooks/useLiveResults';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { setMapEnabled, useMapEnabled } from '../hooks/useMapPreference';
+import { useDialog } from '../hooks/useDialog';
 import { buildModel, emptySnapshot, precincts2022 } from '../volby/model';
 import { createDemoFeed } from '../volby/demo';
 import { setActiveCouncil } from '../volby/council';
@@ -62,6 +64,50 @@ function readHash() {
     return { tab, precinct: precinct ? decodeURIComponent(precinct) : null };
 }
 
+// Záložka Mapa na telefonu, dokud si mapu uživatel nezapne (useMapPreference)
+function MapOffCard({ onEnable, onOpenList }) {
+    return (
+        <div className="h-full overflow-y-auto px-3 pt-3 pb-20">
+            <Card className="p-4">
+                <SectionTitle>Mapa okrsků</SectionTitle>
+                <p className="text-sm text-neutral-700">
+                    Na telefonu je mapa vypnutá, ať šetří data i baterii. Zapnutí stáhne zhruba <b>1 MB</b> (podkladová
+                    mapa a knihovny) a další data při každém posunu.
+                </p>
+                <button onClick={onEnable} className="mt-3 w-full rounded-xl bg-black text-white py-3 text-sm font-semibold active:bg-neutral-800">
+                    Zapnout mapu
+                </button>
+                <p className="mt-2 text-[11px] text-neutral-500">Zapamatujeme si to — vypnout ji jde zase v mapě nebo v menu.</p>
+                {onOpenList && (
+                    <button onClick={onOpenList} className="mt-2 py-2.5 text-sm font-semibold text-black hover:underline">
+                        Výsledky okrsků jako seznam →
+                    </button>
+                )}
+            </Card>
+        </div>
+    );
+}
+
+// Detail okrsku bez mapy (mapa na telefonu vypnutá): spodní panel přes seznam
+function PrecinctSheet({ id, onClose, children }) {
+    const ref = useDialog(true, onClose);
+    return (
+        <div className="fixed inset-0 z-[1300] bg-black/30 flex items-end sm:items-center sm:justify-center" onClick={onClose}>
+            <div
+                ref={ref}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Okrsek ${id}`}
+                className="w-full sm:max-w-md max-h-[70dvh] overflow-y-auto overscroll-contain px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] outline-none"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {children}
+            </div>
+        </div>
+    );
+}
+
 function PreElectionCard({ slug }) {
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
@@ -110,6 +156,7 @@ function TurnoutCard({ snapshot, results2022 }) {
 
 export default function CouncilApp({ council }) {
     const isMobile = useIsMobile();
+    const mapEnabled = useMapEnabled();
     const [statics, setStatics] = useState(null);
     const [tab, setTab] = useState(() => readHash().tab);
     const [selectedId, setSelectedId] = useState(() => readHash().precinct);
@@ -223,9 +270,14 @@ export default function CouncilApp({ council }) {
         if (hash !== window.location.hash) history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
     }, [tab, selectedId]);
 
-    // Detail okrsku na mobilu je spodní panel přes mapu — brouk by v něm
-    // zakrýval čísla (viz BugReportWidget, body[data-sheet])
-    const sheetOpen = isMobile && tab === 'map' && !!selectedId;
+    // Mapa: data (okrsky.geojson) a jestli se opravdu kreslí — na telefonu
+    // jen když si ji uživatel zapnul, jinak se MapLibre ani dlaždice nestahují
+    const mapData = !!council.map && !!statics?.geoJson;
+    const showMap = mapData && (!isMobile || mapEnabled);
+
+    // Detail okrsku na mobilu je spodní panel (přes mapu, nebo bez mapy přes
+    // seznam) — brouk by v něm zakrýval čísla (viz BugReportWidget, body[data-sheet])
+    const sheetOpen = isMobile && !!selectedId && (!showMap || tab === 'map');
     useEffect(() => {
         if (!sheetOpen) return undefined;
         document.body.dataset.sheet = '';
@@ -236,8 +288,9 @@ export default function CouncilApp({ council }) {
 
     const selectPrecinct = (id) => {
         setSelectedId(id);
-        // mapa nemusí být načtená (výpadek okrsky.geojson) — pak zůstat na místě
-        if (isMobile && council.map && statics?.geoJson) switchTab('map');
+        // bez mapy (vypnutá na telefonu, výpadek okrsky.geojson) zůstat na místě —
+        // detail se ukáže jako spodní panel
+        if (isMobile && showMap) switchTab('map');
     };
 
     if (!ready || !model) {
@@ -251,10 +304,10 @@ export default function CouncilApp({ council }) {
         );
     }
 
-    const withMap = council.map && !!statics.geoJson;
+    const withMap = mapData;
     const hasPrecincts = council.precinctFiles !== false;
 
-    const map = withMap && (
+    const map = showMap && (
         <div className="relative h-full w-full">
             <Suspense fallback={<div className="h-full w-full bg-[#E5E5E3] animate-pulse" />}>
                 <ResultsMap
@@ -289,6 +342,15 @@ export default function CouncilApp({ council }) {
                 <div className={`absolute z-[1000] ${isMobile ? 'bottom-2 left-2 right-16' : 'bottom-6 left-3'} rounded-xl bg-black/90 text-white text-xs px-3 py-2 shadow-lg`}>
                     Ještě se nesčítá — mapa zatím ukazuje <b className="text-[#FEC900]">komunální volby 2022</b> (předchůdci dnešních kandidátek).
                 </div>
+            )}
+            {isMobile && !selectedId && (
+                // vypnout mapu jde i přímo tady (nad bannerem „Ještě se nesčítá")
+                <button
+                    onClick={() => setMapEnabled(false)}
+                    className={`absolute z-[1000] left-2 ${counted === 0 ? 'bottom-[4.5rem]' : 'bottom-6'} rounded-full bg-white/95 backdrop-blur border border-neutral-200 shadow-lg px-3.5 py-2.5 text-xs font-semibold text-neutral-800 active:bg-neutral-100`}
+                >
+                    Vypnout mapu
+                </button>
             )}
             {selectedId && (
                 <div
@@ -334,7 +396,7 @@ export default function CouncilApp({ council }) {
                 // Klepnutí na stranu ji ukáže na mapě — na mobilu je mapa ve
                 // vlastní záložce, tak se na ni rovnou přepne
                 selectedParty={mapMode === 'party' ? mapParty : null}
-                onSelectParty={withMap ? (id) => {
+                onSelectParty={showMap ? (id) => {
                     setMapMode(id === council.pirates ? 'ours' : 'party');
                     setMapParty(id);
                     if (isMobile) switchTab('map');
@@ -398,7 +460,11 @@ export default function CouncilApp({ council }) {
             {isMobile ? (
                 <>
                     <main className="flex-1 min-h-0 relative">
-                        {activeTab === 'map' ? map : <div ref={scrollRef} className="h-full overflow-y-auto px-3 pt-3 pb-20">{panels[activeTab]}</div>}
+                        {activeTab === 'map' ? (
+                            showMap ? map : <MapOffCard onEnable={() => setMapEnabled(true)} onOpenList={hasPrecincts ? () => switchTab('precincts') : null} />
+                        ) : (
+                            <div ref={scrollRef} className="h-full overflow-y-auto px-3 pt-3 pb-20">{panels[activeTab]}</div>
+                        )}
                     </main>
                     <nav
                         aria-label="Sekce výsledků"
@@ -445,6 +511,17 @@ export default function CouncilApp({ council }) {
                     </aside>
                     {withMap && <section className="flex-1 min-w-0">{map}</section>}
                 </main>
+            )}
+            {!showMap && selectedId && (
+                <PrecinctSheet id={selectedId} onClose={closePrecinct}>
+                    <PrecinctDetail
+                        id={selectedId}
+                        snapshot={snapshot}
+                        results2022={statics.results2022}
+                        arrivals={live.arrivals}
+                        onClose={closePrecinct}
+                    />
+                </PrecinctSheet>
             )}
         </div>
     );

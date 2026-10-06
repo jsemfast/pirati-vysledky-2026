@@ -83,7 +83,11 @@ Konfigurace); jinde se karta koalice a režim mapy „Koalice" neukazují.
   aspoň 40–44 px, záložky si pamatují vlastní pozici scrollu a otevřená
   záložka + vybraný okrsek jsou v URL (`#mapa:3021`), takže přežijí vynucené
   obnovení po nasazení. Mapa (MapLibre + Leaflet) se stahuje zvlášť, přehled
-  ji nenačítá.
+  ji nenačítá. **Na telefonu je mapa ve výchozím stavu vypnutá** (~1 MB dat
+  + dlaždice při posunu): záložka Mapa nabídne „Zapnout mapu", vypnout jde
+  v mapě nebo přepínačem v menu, volba je v `localStorage`
+  ([`useMapPreference.js`](src/hooks/useMapPreference.js)). Bez mapy se detail
+  okrsku otevře jako spodní panel nad seznamem okrsků.
 
 | Desktop (Praha 6, demo) | Mobil (Praha 3, demo) |
 |---|---|
@@ -345,6 +349,7 @@ a zařízení. Token GitHubu je jen na serveru.
 - [ ] Brouk: testovací hlášení se screenshotem založí issue (pak ho zavřít).
 - [ ] Přehled `/?demo` na mobilu: karty MČ, řazení, souhrn mandátů.
 - [ ] Mobil na šířku (`/<slug>?demo#mapa`): spodní lišta, mapa, detail okrsku vpravo.
+- [ ] Mobil s vypnutou mapou: záložka Mapa → Zapnout mapu; Okrsky → klepnutí na okrsek otevře panel s detailem.
 - [ ] Billing Vercel týmu v pořádku (žádná neuhrazená faktura).
 - [ ] V sobotu po 14:00 první okrsky: zkontrolovat, že čísla sedí s volby.gov.cz/app/kv2026.
 - [ ] Po vyhlášení mandátů ČSÚ: zkontrolovat, že se přepnulo na „oficiální mandáty".

@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNow } from '../hooks/useNow';
 import { useDialog } from '../hooks/useDialog';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { setMapEnabled, useMapEnabled } from '../hooks/useMapPreference';
 import { APP_VERSION } from '../changelog';
 import { openChangelog } from '../utils/openChangelog';
 import { COUNCILS, POLLS_CLOSE } from '../councils';
@@ -67,6 +69,8 @@ function CouncilMenu({ demo }) {
     const close = useCallback(() => setOpen(false), []);
     const panelRef = useDialog(open, close);
     const current = activeCouncil();
+    const isMobile = useIsMobile();
+    const mapEnabled = useMapEnabled();
     // MČ z druhé půlky seznamu (Praha 11, Zbraslav…) by byla až pod ohybem
     useEffect(() => {
         if (open) panelRef.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'center' });
@@ -143,6 +147,26 @@ function CouncilMenu({ demo }) {
                                 ))}
                             </div>
                             <div className="pt-2 mt-2 border-t border-neutral-100 space-y-1">
+                                {isMobile && current?.map && (
+                                    // mapa okrsků na telefonu (viz useMapPreference) — vypnutá šetří data
+                                    <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={mapEnabled}
+                                        onClick={() => setMapEnabled(!mapEnabled)}
+                                        className="w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-neutral-100 active:bg-neutral-100 text-neutral-800"
+                                    >
+                                        <span>
+                                            <span className="block text-sm font-semibold">Mapa okrsků</span>
+                                            <span className="block text-xs text-neutral-500">
+                                                {mapEnabled ? 'zapnutá — stahuje podkladovou mapu (~1 MB)' : 'vypnutá — šetří data a baterii'}
+                                            </span>
+                                        </span>
+                                        <span className={`shrink-0 w-11 h-6 rounded-full p-0.5 transition-colors ${mapEnabled ? 'bg-black' : 'bg-neutral-300'}`} aria-hidden="true">
+                                            <span className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${mapEnabled ? 'translate-x-5' : ''}`} />
+                                        </span>
+                                    </button>
+                                )}
                                 <a href={demo ? `/${current?.slug || ''}` : `/${current?.slug || ''}?demo`} className="block rounded-xl px-3 py-2.5 hover:bg-[#FFF6D1] text-neutral-800">
                                     <div className="text-sm font-semibold">{demo ? 'Ukončit demo' : 'Demo sčítání'}</div>
                                     <div className="text-xs text-neutral-500">
