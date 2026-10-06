@@ -113,7 +113,7 @@ function PirateCard({ council, summary, lists, fresh }) {
     return (
         <a
             href={href(council)}
-            className={`group block rounded-2xl bg-white border p-4 shadow-sm hover:shadow-md hover:border-black transition ${
+            className={`group block min-w-0 rounded-2xl bg-white border p-4 shadow-sm hover:shadow-md hover:border-black transition ${
                 fresh ? 'border-[#FEC900] ring-2 ring-[#FEC900]/60' : 'border-neutral-200'
             }`}
         >
@@ -236,7 +236,7 @@ function Hero({ snapshot, live, lists }) {
                 <div className="mt-3 text-sm text-white/70">{line}</div>
                 {phase !== 'pre' && p?.total > 0 && <div className="mt-2 max-w-md"><Progress summary={{ counted: p.counted, total: p.total }} dark /></div>}
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl bg-white/[0.07] border border-white/10 p-4">
                         <div className="font-condensed text-xs font-bold uppercase tracking-wider text-[#FEC900]">Piráti v městských částech</div>
                         <div className="mt-2 flex items-baseline gap-2">
@@ -374,7 +374,7 @@ export default function Landing() {
                         </div>
                     )}
                 </div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {ours.map((c) => (
                         <PirateCard key={c.slug} council={c} summary={s[c.zastup]} lists={lists[c.zastup]} fresh={fresh.has(String(c.zastup))} />
                     ))}
