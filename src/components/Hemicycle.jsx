@@ -1,7 +1,7 @@
 // Půlkruh zastupitelstva (35 / 45 / 65 křesel). Křesla jsou přiřazená
 // konkrétním zvoleným (odhad nebo oficiální výsledek) — klik/tap ukáže, kdo
 // na něm sedí. Strany jsou seřazené zhruba zleva doprava (council.js → AXIS).
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { activeCouncil, partyMeta } from '../volby/council';
 import { seatList } from '../volby/model';
 import { fmtInt, fmtPct } from '../volby/format';
@@ -53,9 +53,74 @@ export default function Hemicycle({ model, highlight = null, onSelectPerson, cen
     const highlighted = highlightSet ? seats.filter((s) => highlightSet.has(s.partyId)).length : null;
     const activeSeat = active !== null ? seats[active] : null;
 
+    // Křesla mají na telefonu 17–24 px a dotýkají se — místo trefování
+    // kroužku vybere klepnutí nejbližší křeslo a přejetí prstem po půlkruhu
+    // křesla projíždí (touch-pan-y: svislý posun stránky dál funguje)
+    const svgRef = useRef(null);
+    const pressing = useRef(false);
+    const nearest = (e) => {
+        const ctm = svgRef.current?.getScreenCTM();
+        if (!ctm) return null;
+        const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+        let best = null;
+        let bestD = (seatR * 3) ** 2;
+        POSITIONS.forEach((pos, i) => {
+            if (!seats[i]) return;
+            const d = (pos.x - pt.x) ** 2 + (pos.y - pt.y) ** 2;
+            if (d < bestD) {
+                bestD = d;
+                best = i;
+            }
+        });
+        return best;
+    };
+    const hover = (e) => {
+        if (e.pointerType !== 'mouse' && !pressing.current) return;
+        const i = nearest(e);
+        if (i !== null) setActive(i);
+    };
+    const select = (i) => {
+        setActive(i);
+        onSelectPerson?.(seats[i].person);
+    };
+    // Klávesnice: šipky projíždějí křesla, Enter vybere
+    const onKeyDown = (e) => {
+        if (!seats.length) return;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const step = e.key === 'ArrowRight' ? 1 : -1;
+            setActive((a) => (a === null ? (step > 0 ? 0 : seats.length - 1) : (a + step + seats.length) % seats.length));
+        } else if (e.key === 'Enter' && active !== null) {
+            select(active);
+        }
+    };
+
     return (
         <div>
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-md mx-auto block select-none" role="img" aria-label="Rozdělení mandátů v zastupitelstvu">
+            <svg
+                ref={svgRef}
+                viewBox={`0 0 ${W} ${H}`}
+                className="w-full max-w-md mx-auto block select-none touch-pan-y rounded-lg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FEC900]"
+                role="group"
+                aria-label="Rozdělení mandátů v zastupitelstvu — šipkami projdeš křesla"
+                tabIndex={seats.length ? 0 : -1}
+                onKeyDown={onKeyDown}
+                onPointerDown={(e) => {
+                    pressing.current = true;
+                    hover(e);
+                }}
+                onPointerMove={hover}
+                onPointerUp={() => {
+                    pressing.current = false;
+                }}
+                onPointerCancel={() => {
+                    pressing.current = false;
+                }}
+                onClick={(e) => {
+                    const i = nearest(e);
+                    if (i !== null) select(i);
+                }}
+            >
                 {POSITIONS.map((pos, i) => {
                     const seat = seats[i];
                     const color = seat ? partyMeta(seat.partyId).color : '#E5E5E3';
@@ -71,13 +136,7 @@ export default function Hemicycle({ model, highlight = null, onSelectPerson, cen
                             opacity={dim ? 0.18 : 1}
                             stroke={isActive ? '#FEC900' : '#fff'}
                             strokeWidth={isActive ? 2.4 : 1.2}
-                            className={seat ? 'cursor-pointer transition-all duration-300' : ''}
-                            onMouseEnter={() => seat && setActive(i)}
-                            onClick={() => {
-                                if (!seat) return;
-                                setActive(i);
-                                onSelectPerson?.(seat.person);
-                            }}
+                            className={seat ? 'cursor-pointer transition-[r,opacity] duration-300' : ''}
                         >
                             {seat && <title>{`${seat.person.display} — ${partyMeta(seat.partyId).short}`}</title>}
                         </circle>
@@ -91,7 +150,7 @@ export default function Hemicycle({ model, highlight = null, onSelectPerson, cen
                 </text>
             </svg>
 
-            <div className="min-h-[52px] mt-1">
+            <div className="min-h-[52px] mt-1" aria-live="polite">
                 {activeSeat ? (
                     <div className="flex items-center gap-3 rounded-xl bg-neutral-50 px-3 py-2">
                         <Avatar person={activeSeat.person} size={36} ring={partyMeta(activeSeat.partyId).pirates} />
@@ -108,7 +167,7 @@ export default function Hemicycle({ model, highlight = null, onSelectPerson, cen
                     </div>
                 ) : (
                     <div className="text-[11px] text-neutral-400 text-center pt-3">
-                        {seats.length ? 'Klepni na křeslo — ukáže, kdo na něm sedí' : 'Mandáty se rozdělí s prvními sečtenými okrsky'}
+                        {seats.length ? 'Klepni na křeslo nebo po nich přejeď prstem — ukáže, kdo na něm sedí' : 'Mandáty se rozdělí s prvními sečtenými okrsky'}
                     </div>
                 )}
             </div>
