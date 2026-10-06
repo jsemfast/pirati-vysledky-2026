@@ -27,7 +27,7 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
         <Card className="p-4">
             <SectionTitle
                 right={
-                    <span className="text-[10px] text-neutral-400">
+                    <span className="text-[11px] text-neutral-500">
                         {hasVotes ? (official ? 'oficiální mandáty' : 'mandáty = odhad z průběžných čísel') : 'v závorce KV 2022'}
                     </span>
                 }
@@ -63,7 +63,7 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                                             title={official ? 'Mandáty' : 'Odhad mandátů'}
                                         >
                                             {p.seats}
-                                            <span className="text-[10px] font-semibold text-neutral-400 ml-0.5">m.</span>
+                                            <span className="text-[11px] font-semibold text-neutral-500 ml-0.5">m.</span>
                                         </span>
                                     </>
                                 ) : (
@@ -126,7 +126,7 @@ export default function PartyResults({ model, onSelectParty, selectedParty }) {
                     {showAll ? 'Skrýt menší kandidátky' : `Zobrazit všech ${parties.length} kandidátek`}
                 </button>
             )}
-            <div className="mt-2 flex items-center gap-3 text-[10px] text-neutral-400">
+            <div className="mt-2 flex items-center gap-3 text-[11px] text-neutral-500">
                 <span className="flex items-center gap-1">
                     <span className="inline-block w-3 border-t-2 border-neutral-400/70" />
                     KV 2022{model.baselineScope ? ` (stejných ${model.baselineScope} okrsků)` : ''}

@@ -100,12 +100,12 @@ export function CoalitionHero({ model }) {
                 <div className="p-4">
                     <div className="flex items-center justify-between gap-2">
                         <div className="font-condensed text-xs font-bold uppercase tracking-wider text-neutral-500">Současná koalice</div>
-                        {hasVotes ? <MajorityBadge seats={coalition.seats} /> : <span className="text-[11px] text-neutral-400">čeká na výsledky</span>}
+                        {hasVotes ? <MajorityBadge seats={coalition.seats} /> : <span className="text-[11px] text-neutral-500">čeká na výsledky</span>}
                     </div>
                     <div className="mt-1 flex items-baseline gap-2">
-                        <span className={`font-display text-5xl leading-none tabular-nums ${hasVotes ? 'text-neutral-900' : 'text-neutral-300'}`}>{hasVotes ? coalition.seats : coalition.seats2022}</span>
+                        <span className={`font-display text-5xl leading-none tabular-nums ${hasVotes ? 'text-neutral-900' : 'text-neutral-400'}`}>{hasVotes ? coalition.seats : coalition.seats2022}</span>
                         <span className="text-sm text-neutral-500">/ {hasVotes ? council.seats : coalition.seatsTotal2022} mandátů{hasVotes ? '' : ' v 2022'}</span>
-                        {hasVotes && <span className="ml-auto text-[11px] text-neutral-400">2022: {coalition.seats2022}/{coalition.seatsTotal2022}</span>}
+                        {hasVotes && <span className="ml-auto text-[11px] text-neutral-500">2022: {coalition.seats2022}/{coalition.seatsTotal2022}</span>}
                     </div>
                     <div className="mt-2.5">
                         <SeatBar seatsById={hasVotes ? seatsById : {}} members={coalition.members} />
@@ -119,7 +119,7 @@ export function CoalitionHero({ model }) {
                         ))}
                     </div>
                     {hasVotes && !official && (
-                        <div className="mt-2 text-[11px] text-neutral-400">
+                        <div className="mt-2 text-[11px] text-neutral-500">
                             Odhad z {snapshot.precincts.counted} / {snapshot.precincts.total} sečtených okrsků — může se ještě hýbat.
                         </div>
                     )}
@@ -197,7 +197,7 @@ export default function CoalitionPanel({ model }) {
                                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.meta.color }} />
                                 <span className="flex-1 text-neutral-700">{p.meta.short}</span>
                                 <span className="tabular-nums font-semibold text-neutral-900">{fmtInt(p.toNext)} hl.</span>
-                                <span className="tabular-nums text-[11px] text-neutral-400 w-24 text-right">≈ {fmtInt(Math.ceil(p.toNext / p.candidates))} voličů</span>
+                                <span className="tabular-nums text-[11px] text-neutral-500 w-24 text-right">≈ {fmtInt(Math.ceil(p.toNext / p.candidates))} voličů</span>
                             </div>
                         ))}
                     </div>
@@ -267,14 +267,14 @@ export default function CoalitionPanel({ model }) {
                                     </div>
                                     {isCurrent(c.members) && <span className="text-[10px] font-bold text-[#000000] bg-[#FEC900] rounded-full px-2 py-0.5 shrink-0">současná</span>}
                                     <span className="text-sm font-bold tabular-nums w-14 text-right shrink-0">
-                                        {c.seats} <span className="text-[10px] font-semibold text-neutral-400">+{c.seats - coalition.majority}</span>
+                                        {c.seats} <span className="text-[11px] font-semibold text-neutral-500">+{c.seats - coalition.majority}</span>
                                     </span>
                                 </button>
                             </li>
                         ))}
                     </ul>
                 )}
-                <div className="mt-2 text-[10px] text-neutral-400">
+                <div className="mt-2 text-[11px] text-neutral-500">
                     Minimální koalice = odchodem kterékoli strany by o většinu ({coalition.majority}) přišla. Seřazeno od nejmenšího počtu stran.
                 </div>
             </Card>

@@ -91,7 +91,7 @@ function Progress({ summary, dark = false }) {
 function CountBadge({ summary }) {
     if (!summary || summary.phase === 'pre') return null;
     if (summary.official) return <span className="rounded bg-emerald-600 text-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">konečné</span>;
-    if (!summary.counted) return <span className="text-[11px] text-neutral-400 whitespace-nowrap">čeká na okrsky</span>;
+    if (!summary.counted) return <span className="text-[11px] text-neutral-500 whitespace-nowrap">čeká na okrsky</span>;
     return (
         <span className="text-[11px] tabular-nums text-neutral-500 whitespace-nowrap">
             <b className="text-neutral-900">{summary.counted}</b>/{summary.total} okrsků
@@ -130,7 +130,7 @@ function PirateCard({ council, summary, lists, fresh }) {
 
             <div className="mt-3 flex items-end justify-between gap-3">
                 <div className="min-w-0">
-                    <div className={`font-display text-5xl leading-none tabular-nums ${live ? 'text-black' : 'text-neutral-300'}`}>{fmtPct(pct)}</div>
+                    <div className={`font-display text-5xl leading-none tabular-nums ${live ? 'text-black' : 'text-neutral-400'}`}>{fmtPct(pct)}</div>
                     <div className="mt-1 text-[11px] text-neutral-500 truncate">
                         {!live
                             ? list?.pct2022 !== null && list?.pct2022 !== undefined
@@ -143,7 +143,7 @@ function PirateCard({ council, summary, lists, fresh }) {
                 </div>
                 <div className={`shrink-0 rounded-xl px-3 py-1.5 text-right ${live ? 'bg-black text-[#FEC900]' : 'bg-neutral-100 text-neutral-400'}`}>
                     <div className="font-display text-4xl leading-none tabular-nums">{seats ?? '–'}</div>
-                    <div className={`text-[10px] ${live ? 'text-white/60' : ''}`}>
+                    <div className={`text-[11px] ${live ? 'text-white/70' : ''}`}>
                         {!live ? `${seatsWord(seats ?? 0)} 2022` : summary.official ? seatsWord(seats) : `${seatsWord(seats)} · odhad`}
                     </div>
                 </div>

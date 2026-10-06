@@ -166,7 +166,7 @@ export default function Hemicycle({ model, highlight = null, onSelectPerson, cen
                         )}
                     </div>
                 ) : (
-                    <div className="text-[11px] text-neutral-400 text-center pt-3">
+                    <div className="text-[11px] text-neutral-500 text-center pt-3">
                         {seats.length ? 'Klepni na křeslo nebo po nich přejeď prstem — ukáže, kdo na něm sedí' : 'Mandáty se rozdělí s prvními sečtenými okrsky'}
                     </div>
                 )}

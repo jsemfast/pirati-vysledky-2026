@@ -263,7 +263,7 @@ export default function BugReportWidget({ raised = false }) {
                                             {/* na dotykovém displeji nejde přetahovat ani Ctrl+V */}
                                             <span className="pointer-coarse:hidden">Přetáhni screenshot sem, vlož <b>Ctrl+V</b> nebo <span className="underline font-semibold text-black">vyber soubor</span></span>
                                             <span className="hidden pointer-coarse:inline"><span className="underline font-semibold text-black">Vyber screenshot</span> z galerie</span>
-                                            <span className="block text-[11px] text-neutral-400 mt-0.5">PNG, JPG, GIF, WebP</span>
+                                            <span className="block text-[11px] text-neutral-500 mt-0.5">PNG, JPG, GIF, WebP</span>
                                         </button>
                                     )}
                                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => addFile(e.target.files?.[0])} />
@@ -278,7 +278,7 @@ export default function BugReportWidget({ raised = false }) {
                                 >
                                     {submitting ? 'Odesílám…' : 'Odeslat hlášení'}
                                 </button>
-                                <p className="text-[11px] text-neutral-400 text-center">
+                                <p className="text-[11px] text-neutral-500 text-center">
                                     Hlášení se zveřejní jako issue na GitHubu (bez tvého jména). Přidáme adresu stránky, prohlížeč a verzi aplikace.
                                 </p>
                             </form>

@@ -89,15 +89,15 @@ function TurnoutCard({ snapshot, results2022 }) {
             <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
                     <div className="font-display text-3xl leading-none tabular-nums">{fmtPct(t.pct)}</div>
-                    <div className="mt-1 text-[10px] text-neutral-400">účast{t22 !== null && ` · 2022: ${fmtPct(t22)}`}</div>
+                    <div className="mt-1 text-[11px] text-neutral-500">účast{t22 !== null && ` · 2022: ${fmtPct(t22)}`}</div>
                 </div>
                 <div>
                     <div className="font-display text-3xl leading-none tabular-nums">{fmtInt(t.envelopes)}</div>
-                    <div className="mt-1 text-[10px] text-neutral-400">voličů přišlo</div>
+                    <div className="mt-1 text-[11px] text-neutral-500">voličů přišlo</div>
                 </div>
                 <div>
                     <div className="font-display text-3xl leading-none tabular-nums">{fmtInt(t.validVotes)}</div>
-                    <div className="mt-1 text-[10px] text-neutral-400">platných hlasů</div>
+                    <div className="mt-1 text-[11px] text-neutral-500">platných hlasů</div>
                 </div>
             </div>
         </Card>
@@ -346,7 +346,7 @@ export default function CouncilApp({ council }) {
             </Card>
             <LastSeatCard model={model} />
             {model.hasVotes && <TurnoutCard snapshot={snapshot} results2022={statics.results2022} />}
-            <div className="text-[10px] text-neutral-400 px-1 pb-2 leading-relaxed">
+            <div className="text-[11px] text-neutral-500 px-1 pb-2 leading-relaxed">
                 Zdroj: ČSÚ, volby.gov.cz. Mandáty a zvolení jsou do vyhlášení ČSÚ odhad podle zákona (5% klauzule,
                 d'Hondt, 10% preferenční hranice) — výpočet ověřený na výsledcích 2022. Loga a část fotek: programydovoleb.cz.
             </div>
@@ -404,7 +404,7 @@ export default function CouncilApp({ council }) {
                                 key={t.id}
                                 onClick={() => switchTab(t.id)}
                                 aria-current={activeTab === t.id ? 'page' : undefined}
-                                className={`flex flex-col items-center gap-0.5 py-2 font-condensed text-[11px] font-bold short:flex-row short:justify-center short:gap-1.5 short:py-1.5 short:text-xs ${activeTab === t.id ? 'text-black' : 'text-neutral-400'}`}
+                                className={`flex flex-col items-center gap-0.5 py-2 font-condensed text-[11px] font-bold short:flex-row short:justify-center short:gap-1.5 short:py-1.5 short:text-xs ${activeTab === t.id ? 'text-black' : 'text-neutral-500'}`}
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={ICONS[t.id]} />

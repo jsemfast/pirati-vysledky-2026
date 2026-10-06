@@ -101,7 +101,7 @@ export function MapControls({ modeId, onMode, partyId, onParty, parties, compact
                 </select>
             )}
             {!compact && (
-                <div className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                <div className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
                     {MAP_MODES.find((m) => m.id === modeId)?.long}
                 </div>
             )}
@@ -203,7 +203,7 @@ export function PrecinctDetail({ id, snapshot, results2022, arrivals, onClose })
                                         <span className="block h-full rounded-full" style={{ width: `${(r.pct / max) * 100}%`, backgroundColor: r.meta.color }} />
                                     </span>
                                     <span className="w-12 text-right tabular-nums">{fmtPct(r.pct)}</span>
-                                    {r.delta === null ? <span className="w-20" /> : <Delta value={r.delta} className="w-20 text-right text-[10px]" />}
+                                    {r.delta === null ? <span className="w-20" /> : <Delta value={r.delta} className="w-20 text-right text-[11px]" />}
                                 </div>
                             </div>
                         ))}
@@ -211,20 +211,20 @@ export function PrecinctDetail({ id, snapshot, results2022, arrivals, onClose })
                     <div className={`mt-3 pt-2 border-t border-neutral-100 grid ${activeCouncil().coalition ? 'grid-cols-3' : 'grid-cols-2'} gap-2 text-center`}>
                         {activeCouncil().coalition && (
                             <div>
-                                <div className="text-[10px] text-neutral-400">Současná koalice</div>
+                                <div className="text-[11px] text-neutral-500">Současná koalice</div>
                                 <div className="text-sm font-bold tabular-nums">{fmtPct(coalition)}</div>
                             </div>
                         )}
                         <div>
-                            <div className="text-[10px] text-neutral-400">Voličů</div>
+                            <div className="text-[11px] text-neutral-500">Voličů</div>
                             <div className="text-sm font-bold tabular-nums">{fmtInt(o.voters)}</div>
                         </div>
                         <div>
-                            <div className="text-[10px] text-neutral-400">Obálek</div>
+                            <div className="text-[11px] text-neutral-500">Obálek</div>
                             <div className="text-sm font-bold tabular-nums">{fmtInt(o.envelopes)}</div>
                         </div>
                     </div>
-                    <div className="mt-2 text-[10px] text-neutral-400">Změna = proti předchůdci kandidátky v KV 2022 v tomto okrsku.</div>
+                    <div className="mt-2 text-[11px] text-neutral-500">Změna = proti předchůdci kandidátky v KV 2022 v tomto okrsku.</div>
                 </>
             )}
         </Card>
@@ -258,7 +258,7 @@ export function ArrivalsFeed({ snapshot, arrivals, results2022, onSelect, freshI
                                     onClick={() => onSelect(id)}
                                     className={`w-full flex items-center gap-2.5 py-2 px-1 text-left rounded-lg hover:bg-neutral-50 ${fresh.has(id) ? 'bg-[#FFF6D1]' : ''}`}
                                 >
-                                    <span className="w-11 text-[11px] text-neutral-400 tabular-nums">{at ? fmtShortTime(at) : '—'}</span>
+                                    <span className="w-11 text-[11px] text-neutral-500 tabular-nums">{at ? fmtShortTime(at) : '—'}</span>
                                     <span className="text-sm font-bold text-neutral-900 tabular-nums">{id}</span>
                                     {w && (
                                         <span className="text-[10px] font-semibold rounded px-1.5 py-0.5" style={{ backgroundColor: partyMeta(w.id).color, color: textOn(partyMeta(w.id).color) }}>
@@ -267,7 +267,7 @@ export function ArrivalsFeed({ snapshot, arrivals, results2022, onSelect, freshI
                                     )}
                                     <span className="ml-auto text-right">
                                         <span className="text-sm font-semibold tabular-nums text-[#000000]">{fmtPct(ourId() ? ours : w?.pct)}</span>
-                                        {ours !== null && then !== null && <Delta value={ours - then} className="block text-[10px]" />}
+                                        {ours !== null && then !== null && <Delta value={ours - then} className="block text-[11px]" />}
                                     </span>
                                 </button>
                             </li>
@@ -275,7 +275,7 @@ export function ArrivalsFeed({ snapshot, arrivals, results2022, onSelect, freshI
                     })}
                 </ul>
             )}
-            <div className="mt-2 text-[10px] text-neutral-400">
+            <div className="mt-2 text-[11px] text-neutral-500">
                 Čas = kdy okrsek poprvé viděl tento prohlížeč.{' '}
                 {ourId() ? 'Procento = Piráti, změna proti jejich výsledku v KV 2022 ve stejném okrsku.' : 'Procento = vítěz okrsku.'}
             </div>

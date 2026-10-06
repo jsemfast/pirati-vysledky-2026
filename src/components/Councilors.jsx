@@ -44,7 +44,7 @@ function CompactRow({ person, hasVotes, focused, muted = false }) {
                     {person.jumped && <span className="ml-1 text-[10px] font-bold text-emerald-700">↑</span>}
                 </div>
             </div>
-            <span className="text-[11px] text-neutral-400 tabular-nums">#{person.n}</span>
+            <span className="text-[11px] text-neutral-500 tabular-nums">#{person.n}</span>
             {hasVotes && <span className="text-xs tabular-nums text-neutral-600 w-16 text-right">{fmtInt(person.votes)}</span>}
         </div>
     );
@@ -78,7 +78,7 @@ export default function Councilors({ model }) {
     return (
         <div className="space-y-3">
             <Card className="p-4">
-                <SectionTitle right={<span className="text-[10px] text-neutral-400">{official ? 'oficiálně zvolení' : hasVotes ? 'odhad' : ''}</span>}>
+                <SectionTitle right={<span className="text-[11px] text-neutral-500">{official ? 'oficiálně zvolení' : hasVotes ? 'odhad' : ''}</span>}>
                     Zastupitelstvo
                 </SectionTitle>
                 <Hemicycle model={model} onSelectPerson={setFocus} />
@@ -144,10 +144,10 @@ export default function Councilors({ model }) {
                                         <ol className="divide-y divide-neutral-100">
                                             {byVotes.map((c, i) => (
                                                 <li key={c.n} className="flex items-center gap-2 py-1 text-sm">
-                                                    <span className="w-5 text-[11px] text-neutral-400 tabular-nums">{i + 1}.</span>
+                                                    <span className="w-5 text-[11px] text-neutral-500 tabular-nums">{i + 1}.</span>
                                                     <Avatar person={c} size={22} />
                                                     <span className={`flex-1 truncate ${c.seat ? 'font-semibold text-neutral-900' : 'text-neutral-600'}`}>{c.display}</span>
-                                                    <span className="text-[11px] text-neutral-400 tabular-nums">#{c.n}</span>
+                                                    <span className="text-[11px] text-neutral-500 tabular-nums">#{c.n}</span>
                                                     {c.preferred && <span className="text-[10px] font-bold text-emerald-700">nad hranicí</span>}
                                                     <span className="w-14 text-right tabular-nums text-xs">{fmtInt(c.votes)}</span>
                                                 </li>
