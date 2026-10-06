@@ -65,10 +65,11 @@ export function CoalitionHero({ model }) {
                                 </span>
                             </div>
                             {ours.meta.note && <div className="mt-1 text-[11px] text-white/55">{ours.meta.note}</div>}
-                            <div className="mt-1 flex items-baseline gap-3">
-                                <span className={`font-display text-6xl leading-none tabular-nums ${hasVotes ? '' : 'text-white/35'}`}>{fmtPct(hasVotes ? ours.share : ours.baseline)}</span>
+                            {/* procento ani změna se nesmí zalomit (na 320 px se lámalo „20,4 / %“) */}
+                            <div className="mt-1 flex flex-wrap items-baseline gap-x-3">
+                                <span className={`font-display text-5xl min-[360px]:text-6xl leading-none tabular-nums whitespace-nowrap ${hasVotes ? '' : 'text-white/35'}`}>{fmtPct(hasVotes ? ours.share : ours.baseline)}</span>
                                 {hasVotes && ours.delta !== null && (
-                                    <span className={`text-sm font-bold tabular-nums ${ours.delta >= 0 ? 'text-emerald-300' : 'text-orange-300'}`}>
+                                    <span className={`text-sm font-bold tabular-nums whitespace-nowrap ${ours.delta >= 0 ? 'text-emerald-300' : 'text-orange-300'}`}>
                                         {ours.delta >= 0 ? '▲' : '▼'} {fmtPct(Math.abs(ours.delta)).replace(' %', '')} p. b.
                                     </span>
                                 )}
@@ -84,7 +85,7 @@ export function CoalitionHero({ model }) {
                             </div>
                         </div>
                         <div className="text-right shrink-0">
-                            <div className={`font-display text-6xl leading-none tabular-nums ${hasVotes ? 'text-[#FEC900]' : 'text-[#FEC900]/35'}`}>{hasVotes ? ours.seats : ours.baselineSeats ?? '–'}</div>
+                            <div className={`font-display text-5xl min-[360px]:text-6xl leading-none tabular-nums ${hasVotes ? 'text-[#FEC900]' : 'text-[#FEC900]/35'}`}>{hasVotes ? ours.seats : ours.baselineSeats ?? '–'}</div>
                             <div className="text-[11px] text-white/60">{!hasVotes ? 'mandátů v 2022' : official ? 'mandátů' : 'mandátů (odhad)'}</div>
                         </div>
                     </div>

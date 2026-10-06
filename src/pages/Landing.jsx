@@ -130,7 +130,7 @@ function PirateCard({ council, summary, lists, fresh }) {
 
             <div className="mt-3 flex items-end justify-between gap-3">
                 <div className="min-w-0">
-                    <div className={`font-display text-5xl leading-none tabular-nums ${live ? 'text-black' : 'text-neutral-400'}`}>{fmtPct(pct)}</div>
+                    <div className={`font-display text-5xl leading-none tabular-nums whitespace-nowrap ${live ? 'text-black' : 'text-neutral-400'}`}>{fmtPct(pct)}</div>
                     <div className="mt-1 text-[11px] text-neutral-500 truncate">
                         {!live
                             ? list?.pct2022 !== null && list?.pct2022 !== undefined
