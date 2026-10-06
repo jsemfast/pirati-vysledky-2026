@@ -51,9 +51,9 @@ function maplibreWorkerAssets() {
   }
 }
 
-// V devu pouštíme stejné serverové funkce jako na Vercelu (api/volby.js,
-// api/prehled.js), ať se lokálně testuje i cesta přes proxy.
-const API_FUNCTIONS = ['volby', 'prehled']
+// V devu pouštíme stejné serverové funkce (api/volby.js, api/prehled.js,
+// api/bug.js), ať se lokálně testuje i cesta přes proxy.
+const API_FUNCTIONS = ['volby', 'prehled', 'bug']
 
 function apiDev() {
   return {
