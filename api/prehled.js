@@ -5,7 +5,7 @@
 // takže funkce běží zhruba 2× za minutu bez ohledu na počet diváků.
 import { COUNCILS } from '../src/councils.js';
 import { createOverviewFeed } from '../src/volby/overview.js';
-import { USER_AGENT, cacheControl, cdnMaxAge, onlyGet, send } from './_http.js';
+import { USER_AGENT, onlyGet, sendSnapshot } from './_http.js';
 
 let feed = null;
 
@@ -18,16 +18,5 @@ export default async function handler(req, res) {
         concurrency: 8,
         headers: { 'User-Agent': USER_AGENT },
     });
-    try {
-        const { snapshot, stale, error } = await feed.snapshot();
-        const maxAge = stale ? 15 : cdnMaxAge(snapshot.phase);
-        return send(
-            res,
-            200,
-            { ...snapshot, source: 'proxy', stale, ...(stale ? { error: String(error?.message || error) } : {}) },
-            cacheControl(maxAge),
-        );
-    } catch (error) {
-        return send(res, 502, { error: String(error?.message || error) }, 'no-store');
-    }
+    return sendSnapshot(res, feed);
 }

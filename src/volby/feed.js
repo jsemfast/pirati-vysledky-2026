@@ -150,7 +150,7 @@ export function createLimiter(max) {
     });
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const sameVotes = (a, b) => !!a && !!b && Object.keys(a).length === Object.keys(b).length
     && Object.keys(a).every((k) => a[k] === b[k]);
 

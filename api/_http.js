@@ -23,6 +23,25 @@ export function cacheControl(maxAge) {
     return `public, max-age=0, s-maxage=${maxAge}, stale-while-revalidate=${maxAge * 2}, stale-if-error=900`;
 }
 
+// Odpověď ze snapshotu feedu (createKvFeed / createOverviewFeed). Při výpadku
+// volby.gov.cz poslední data jako stale (v CDN jen krátce); když ještě nic
+// v paměti není, 502 — klient přepne na přímé čtení (5xx CDN necachuje,
+// stale-if-error drží starou verzi).
+export async function sendSnapshot(res, feed) {
+    try {
+        const { snapshot, stale, error } = await feed.snapshot();
+        const maxAge = stale ? 15 : cdnMaxAge(snapshot.phase);
+        return send(
+            res,
+            200,
+            { ...snapshot, source: 'proxy', stale, ...(stale ? { error: String(error?.message || error) } : {}) },
+            cacheControl(maxAge),
+        );
+    } catch (error) {
+        return send(res, 502, { error: String(error?.message || error) }, 'no-store');
+    }
+}
+
 export function onlyGet(req, res) {
     if (req.method === 'GET' || req.method === 'HEAD') return true;
     res.setHeader('Allow', 'GET');

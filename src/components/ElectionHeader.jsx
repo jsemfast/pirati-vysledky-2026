@@ -89,7 +89,7 @@ function CouncilMenu({ demo }) {
                                         {demo ? 'zpět na skutečná data z volby.gov.cz' : 'simulace večera z dat 2022 — na vyzkoušení'}
                                     </div>
                                 </a>
-                                <a href="/" className="block rounded-xl px-3 py-2.5 hover:bg-neutral-100 text-neutral-800">
+                                <a href={demo ? '/?demo' : '/'} className="block rounded-xl px-3 py-2.5 hover:bg-neutral-100 text-neutral-800">
                                     <div className="text-sm font-semibold">Přehled všech zastupitelstev</div>
                                 </a>
                             </div>
@@ -130,7 +130,7 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
         <header className="bg-black text-white shrink-0 z-[1200] relative">
             <div className="px-4 pt-3 pb-2.5 md:px-5">
                 <div className="flex items-center gap-3">
-                    <a href="/" className="shrink-0" aria-label="Přehled zastupitelstev">
+                    <a href={demo ? '/?demo' : '/'} className="shrink-0" aria-label="Přehled zastupitelstev">
                         <img src="/brand/logo-full-white.svg" alt="Piráti" className="h-6 sm:h-7 md:h-8" />
                     </a>
                     <div className="min-w-0 flex-1 border-l border-white/20 pl-3">

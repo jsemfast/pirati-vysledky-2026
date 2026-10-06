@@ -9,7 +9,7 @@
 // už sečtené okrsky (na ty se čeká max. 3 s, zbytek doběhne na pozadí).
 import { createKvFeed } from '../src/volby/feed.js';
 import { councilByZastup } from '../src/councils.js';
-import { USER_AGENT, cacheControl, cdnMaxAge, onlyGet, send } from './_http.js';
+import { USER_AGENT, onlyGet, send, sendSnapshot } from './_http.js';
 
 const feeds = new Map(); // zastup -> feed (sdílený v rámci instance)
 
@@ -32,19 +32,5 @@ export default async function handler(req, res) {
     const z = new URL(req.url, 'http://localhost').searchParams.get('z');
     const council = councilByZastup(z);
     if (!council) return send(res, 400, { error: 'unknown-council' }, 'public, max-age=0, s-maxage=3600');
-
-    try {
-        const { snapshot, stale, error } = await feedFor(council).snapshot();
-        const maxAge = stale ? 15 : cdnMaxAge(snapshot.phase);
-        return send(
-            res,
-            200,
-            { ...snapshot, source: 'proxy', stale, ...(stale ? { error: String(error?.message || error) } : {}) },
-            cacheControl(maxAge),
-        );
-    } catch (error) {
-        // Ještě nic v paměti a volby.gov.cz neodpovídá — klient přepne na
-        // přímé čtení (5xx CDN necachuje, stale-if-error výš drží starou verzi)
-        return send(res, 502, { error: String(error?.message || error) }, 'no-store');
-    }
+    return sendSnapshot(res, feedFor(council));
 }

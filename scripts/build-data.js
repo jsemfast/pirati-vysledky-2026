@@ -363,14 +363,17 @@ function mapPredecessors(lists, lists2022) {
         l.baseline = { ids: related.map((k) => k.id), label: related.map((k) => k.short).join(' + '), exact };
     }
 
+    // Jen jednoznačné páry: kandidátka 2026 se jménem shoduje s jedinou volnou
+    // kandidátkou 2022 a tu jménem nechce žádná jiná kandidátka 2026
     const taken = new Set(lists.flatMap((l) => [...(l.baseline?.ids || []), ...(l.split || []).map((s) => s.id)]));
     const norm = (s) => slugify(s).replace(/-/g, ' ');
-    for (const l of lists) {
-        if (l.baseline || l.split) continue;
+    const byName = new Map(lists.filter((l) => !l.baseline && !l.split).map((l) => {
         const names = new Set([norm(l.name), norm(l.short30)]);
-        const same = olds.filter((k) => !taken.has(k.id) && (names.has(norm(k.name)) || names.has(norm(k.short))));
-        if (same.length !== 1) continue;
-        taken.add(same[0].id);
+        return [l, olds.filter((k) => !taken.has(k.id) && (names.has(norm(k.name)) || names.has(norm(k.short))))];
+    }));
+    const wanted = (id) => [...byName.values()].filter((same) => same.some((k) => k.id === id)).length;
+    for (const [l, same] of byName) {
+        if (same.length !== 1 || wanted(same[0].id) !== 1) continue;
         l.baseline = { ids: [same[0].id], label: same[0].short, exact: false, byName: true };
     }
 }

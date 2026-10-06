@@ -163,7 +163,7 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
                         if (goDirect) {
                             proxyDownUntilRef.current = Date.now() + PROXY_RETRY_MS;
                             proxyFailsRef.current = 0;
-                            console.warn('[volby] /api/volby nedostupné, beru data přímo z volby.gov.cz', e);
+                            console.warn(`[volby] ${target.url} nedostupné, beru data přímo z volby.gov.cz`, e);
                         } else {
                             error = e;
                         }

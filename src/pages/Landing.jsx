@@ -37,10 +37,14 @@ function useLists(statics) {
     }, [statics]);
 }
 
-// Čerstvě změněná zastupitelstva (přibyly okrsky / vyhlášeno) na pár vteřin zvýraznit
+// Čerstvě změněná zastupitelstva (přibyly okrsky / vyhlášeno) na pár vteřin zvýraznit.
+// Zhasnutí běží mimo cleanup efektu — další snapshot bez změn (demo po 4 s,
+// ruční obnovení) ho nesmí zrušit, jinak by zvýraznění zůstalo svítit.
 function useFresh(snapshot) {
     const prev = useRef(null);
+    const clearRef = useRef(null);
     const [fresh, setFresh] = useState(() => new Set());
+    useEffect(() => () => clearTimeout(clearRef.current), []);
     useEffect(() => {
         if (!snapshot) return undefined;
         const sig = Object.fromEntries(Object.values(snapshot.councils).map((s) => [s.z, `${s.counted}|${s.official}`]));
@@ -50,11 +54,9 @@ function useFresh(snapshot) {
         const changed = Object.keys(sig).filter((z) => old[z] !== undefined && old[z] !== sig[z]);
         if (!changed.length) return undefined;
         const t0 = setTimeout(() => setFresh(new Set(changed)), 0);
-        const t1 = setTimeout(() => setFresh(new Set()), 4000);
-        return () => {
-            clearTimeout(t0);
-            clearTimeout(t1);
-        };
+        clearTimeout(clearRef.current);
+        clearRef.current = setTimeout(() => setFresh(new Set()), 4000);
+        return () => clearTimeout(t0);
     }, [snapshot]);
     return fresh;
 }
@@ -159,7 +161,7 @@ function PirateCard({ council, summary, lists, fresh }) {
 
             <div className="mt-3 space-y-1.5">
                 <SeatStrip council={council} summary={summary} lists={lists} />
-                {summary?.phase !== 'pre' && !summary?.official && <Progress summary={summary} />}
+                {summary && summary.phase !== 'pre' && !summary.official && <Progress summary={summary} />}
             </div>
         </a>
     );
@@ -193,7 +195,9 @@ function OtherRow({ council, summary, lists, fresh }) {
     );
 }
 
-function Hero({ snapshot, live, now, lists }) {
+function Hero({ snapshot, live, lists }) {
+    // odpočet tiká jen v hlavičce — ne celá stránka (desítky karet) každou vteřinu
+    const now = useNow(1000);
     const phase = snapshot?.phase || (now < POLLS_CLOSE ? 'pre' : 'waiting');
     const s = snapshot?.councils || {};
     const mag = s[MAGISTRAT.zastup];
@@ -283,9 +287,11 @@ function Hero({ snapshot, live, now, lists }) {
                     {live.source === 'direct' && <span>přímo z ČSÚ (jen MČ s Piráty)</span>}
                 </div>
             </div>
-            {live.stale && live.error && (
+            {live.error && (live.stale || live.status === 'error') && (
                 <div className="bg-orange-500/90 text-white text-[11px] px-4 py-1 text-center">
-                    Zdroj teď neodpovídá — ukazuji poslední načtená data, zkouším to znovu.
+                    {live.stale
+                        ? 'Zdroj teď neodpovídá — ukazuji poslední načtená data, zkouším to znovu.'
+                        : 'Výsledky se nepodařilo načíst — zkouším to znovu.'}
                 </div>
             )}
         </header>
@@ -293,7 +299,6 @@ function Hero({ snapshot, live, now, lists }) {
 }
 
 export default function Landing() {
-    const now = useNow(1000);
     const [statics, setStatics] = useState(null);
     const [sort, setSort] = useState('mc');
 
@@ -343,13 +348,13 @@ export default function Landing() {
         const mag = s[MAGISTRAT.zastup];
         const seatsMc = OURS.reduce((sum, c) => sum + (s[c.zastup]?.votes > 0 ? s[c.zastup].pirates?.seats || 0 : 0), 0);
         document.title = anyLive
-            ? `Piráti: MČ ${seatsMc} · Magistrát ${mag?.pirates?.seats ?? '–'} · ${fmtPct(snapshot?.precincts?.pct)} sečteno`
+            ? `Piráti: MČ ${seatsMc} · Magistrát ${mag?.votes > 0 ? mag.pirates?.seats ?? '–' : '–'} · ${fmtPct(snapshot?.precincts?.pct)} sečteno`
             : 'Volby 2026 · Piráti Praha';
     }, [s, anyLive, snapshot]);
 
     return (
         <div className="min-h-dvh bg-[#F3F3F1] text-neutral-900 overflow-y-auto">
-            <Hero snapshot={snapshot} live={live} now={now} lists={lists} />
+            <Hero snapshot={snapshot} live={live} lists={lists} />
 
             <main className="max-w-5xl mx-auto px-4 md:px-5 pt-5 pb-12">
                 {DEMO && (

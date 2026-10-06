@@ -7,20 +7,10 @@
 // i v prohlížeči (záloha, jen zastupitelstva s Piráty) a v demu.
 import { councilByZastup, KV_BASE_URL } from '../councils.js';
 import { allocateSeats } from './compute.js';
-import { createJsonCache, createLimiter, normalizeResults, pathsFor, phaseOf } from './feed.js';
+import { gaussFrom, mulberry32 } from './random.js';
+import { createJsonCache, createLimiter, normalizeResults, pathsFor, phaseOf, sleep } from './feed.js';
 
 export const OVERVIEW_VERSION = 1;
-
-const mulberry32 = (seed) => {
-    let a = seed >>> 0;
-    return () => {
-        a = (a + 0x6d2b79f5) >>> 0;
-        let t = a;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-};
 
 // Souhrn jednoho zastupitelstva z normalizovaného výsledku (normalizeResults).
 // Mandáty: oficiální, když je ČSÚ vyhlásil, jinak náš odhad (allocateSeats).
@@ -61,13 +51,14 @@ export function summarizeCouncil(council, results) {
 }
 
 // Snapshot přehledu: souhrny + součty za městské části (Magistrát má stejné
-// okrsky, do součtu se nepočítá). official = všechna zastupitelstva vyhlášená.
-export function composeOverview(summaries, { now = Date.now(), demo = false } = {}) {
+// okrsky, do součtu se nepočítá). official = všechna zastupitelstva vyhlášená
+// (expected = kolik jich má být — chybějící souhrn „konečné" nepustí).
+export function composeOverview(summaries, { now = Date.now(), demo = false, expected = 1 } = {}) {
     const list = Object.values(summaries);
     const mc = list.filter((s) => !councilByZastup(s.z)?.magistrat);
     const counted = mc.reduce((s, x) => s + x.counted, 0);
     const total = mc.reduce((s, x) => s + x.total, 0);
-    const official = list.length > 0 && list.every((s) => s.official);
+    const official = list.length >= Math.max(1, expected) && list.every((s) => s.official);
     const phase = phaseOf({ counted, official }, now);
     return {
         v: OVERVIEW_VERSION,
@@ -84,6 +75,8 @@ export function composeOverview(summaries, { now = Date.now(), demo = false } = 
 
 // Živý přehled. Zastupitelstvo, jehož soubor zrovna selže, drží poslední
 // známý souhrn; selžou-li všechna a nic v paměti není, build() hodí chybu.
+// Neobnoví-li se nic (zdroj neodpovídá), vrací snapshot() poslední přehled
+// jako stale.
 export function createOverviewFeed({
     councils,
     fetchImpl = (...args) => fetch(...args),
@@ -92,21 +85,48 @@ export function createOverviewFeed({
     minIntervalMs = 20000,
     concurrency = 6,
     timeoutMs = 8000,
+    // jak dlouho build() čeká na soubory, než vrátí přehled z toho, co má
+    // (zbytek doběhne na pozadí a přibude příště) — 58 souborů po vlnách
+    // s timeoutem by jinak přetáhlo maxDuration serverové funkce (30 s)
+    waitMs = 20000,
     headers = {},
 } = {}) {
     const getJson = createJsonCache({ fetchImpl, conditional, baseUrl, minIntervalMs, timeoutMs, headers });
     const limit = createLimiter(concurrency);
     const summaries = {};
+    const pending = new Map(); // zastup -> běžící stažení (sdílí ho i další build)
     let last = null;
     let inflight = null;
 
+    function refresh(c) {
+        if (!pending.has(c.zastup)) {
+            pending.set(c.zastup, limit(async () => {
+                summaries[c.zastup] = summarizeCouncil(c, normalizeResults(await getJson(pathsFor(c).results), c));
+            }).finally(() => pending.delete(c.zastup)));
+        }
+        return pending.get(c.zastup);
+    }
+
     async function build() {
-        const settled = await Promise.allSettled(councils.map((c) => limit(async () => {
-            summaries[c.zastup] = summarizeCouncil(c, normalizeResults(await getJson(pathsFor(c).results), c));
-        })));
-        const failed = settled.filter((r) => r.status === 'rejected');
-        if (!Object.keys(summaries).length) throw failed[0]?.reason || new Error('no-data');
-        last = { ...composeOverview({ ...summaries }), missing: failed.length };
+        let updated = 0;
+        let error = null;
+        const jobs = councils.map((c) => refresh(c).then(
+            () => {
+                updated += 1;
+            },
+            (e) => {
+                error ||= e;
+            },
+        ));
+        await Promise.race([Promise.all(jobs), sleep(waitMs)]);
+        if (!Object.keys(summaries).length) throw error || new Error('no-data');
+        // Nic čerstvého → chyba, ať snapshot() vrátí poslední přehled jako
+        // stale (ne stará data s novým fetchedAt a plnou dobou v CDN)
+        if (!updated && last) throw error || new Error('timeout');
+        last = {
+            ...composeOverview({ ...summaries }, { expected: councils.length }),
+            missing: councils.length - updated,
+        };
         return last;
     }
 
@@ -132,16 +152,14 @@ export function createOverviewFeed({
 // sčítání kolísají. Podklady = public/data/prehled.json. Čísla NEJSOU predikce.
 export function createOverviewDemoFeed({ councils, statics, durationMs = 150000, seed = Date.now() }) {
     const rand = mulberry32(seed);
-    const gauss = () => {
-        const u = Math.max(rand(), 1e-9);
-        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rand());
-    };
+    const gauss = gaussFrom(rand);
     const startedAt = Date.now();
     const sims = councils.filter((c) => statics?.councils?.[c.zastup]).map((c) => {
         const st = statics.councils[c.zastup];
         const span = c.magistrat ? durationMs : durationMs * (0.35 + 0.5 * Math.min(1, c.precincts / 130));
         const start = 3000 + (c.magistrat ? 0 : rand() * (durationMs - span) * 0.7);
-        const raw = st.lists.map((l) => Math.max(0.004, ((l.pct2022 ?? 3) / 100)
+        // rozdělená kandidátka 2022 (bez pct2022) → dílem mezi nástupce (est2022)
+        const raw = st.lists.map((l) => Math.max(0.004, ((l.pct2022 ?? l.est2022 ?? 3) / 100)
             * (l.id === c.pirates ? 1.06 : 1) * (1 + 0.1 * gauss())));
         const sum = raw.reduce((s, v) => s + v, 0);
         return {
