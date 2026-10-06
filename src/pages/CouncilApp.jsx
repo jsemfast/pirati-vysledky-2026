@@ -49,6 +49,15 @@ function useHeight() {
     return [ref, height];
 }
 
+// Otevřená záložka a vybraný okrsek žijí v URL (#mapa:3021) — přežijí
+// vynucené obnovení po nasazení nové verze uprostřed sčítání a jdou sdílet
+const TAB_HASH = { overview: 'prehled', map: 'mapa', councilors: 'zastupitele', coalition: 'koalice', precincts: 'okrsky' };
+function readHash() {
+    const [tabSlug, precinct] = window.location.hash.slice(1).split(':');
+    const tab = Object.keys(TAB_HASH).find((k) => TAB_HASH[k] === tabSlug) || 'overview';
+    return { tab, precinct: precinct ? decodeURIComponent(precinct) : null };
+}
+
 function PreElectionCard({ slug }) {
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
@@ -98,8 +107,8 @@ function TurnoutCard({ snapshot, results2022 }) {
 export default function CouncilApp({ council }) {
     const isMobile = useIsMobile();
     const [statics, setStatics] = useState(null);
-    const [tab, setTab] = useState('overview');
-    const [selectedId, setSelectedId] = useState(null);
+    const [tab, setTab] = useState(() => readHash().tab);
+    const [selectedId, setSelectedId] = useState(() => readHash().precinct);
     const [mapMode, setMapMode] = useState(council.pirates ? 'ours' : 'winner');
     const [mapParty, setMapParty] = useState(council.pirates);
 
@@ -204,6 +213,11 @@ export default function CouncilApp({ council }) {
     useLayoutEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollPos.current[tab] || 0;
     }, [tab]);
+
+    useEffect(() => {
+        const hash = tab === 'overview' && !selectedId ? '' : `#${TAB_HASH[tab]}${selectedId ? `:${encodeURIComponent(selectedId)}` : ''}`;
+        if (hash !== window.location.hash) history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+    }, [tab, selectedId]);
 
     // Detail okrsku na mobilu je spodní panel přes mapu — brouk by v něm
     // zakrýval čísla (viz BugReportWidget, body[data-sheet])
