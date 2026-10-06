@@ -6,6 +6,7 @@ import { partyMeta } from '../volby/council';
 import { fmtInt, fmtPct, mandatesLabel } from '../volby/format';
 import Hemicycle from './Hemicycle';
 import { Avatar, Card, PartyLogo, Pill, SectionTitle } from './ui';
+import { scrollBehavior } from '../utils/motion';
 
 const cardId = (p) => `cand-${p.partyId}-${p.n}`;
 
@@ -70,7 +71,7 @@ export default function Councilors({ model }) {
 
     useEffect(() => {
         if (!focus) return;
-        document.getElementById(cardId(focus))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById(cardId(focus))?.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
     }, [focus]);
 
     const isFocused = (p) => focus && focus.partyId === p.partyId && focus.n === p.n;

@@ -19,6 +19,7 @@ import { setActiveCouncil } from '../volby/council';
 import { turnout2022 } from '../volby/compute';
 import { POLLS_CLOSE } from '../councils';
 import { countdown, fmtInt, fmtPct } from '../volby/format';
+import { scrollBehavior } from '../utils/motion';
 
 const params = new URLSearchParams(window.location.search);
 const DEMO = params.has('demo');
@@ -204,7 +205,7 @@ export default function CouncilApp({ council }) {
     const scrollPos = useRef({});
     const switchTab = (id) => {
         if (id === tab) {
-            scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollRef.current?.scrollTo({ top: 0, behavior: scrollBehavior() });
             return;
         }
         if (scrollRef.current) scrollPos.current[tab] = scrollRef.current.scrollTop;

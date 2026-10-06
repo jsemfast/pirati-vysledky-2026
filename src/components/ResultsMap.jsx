@@ -11,6 +11,7 @@ import { UNCOUNTED_FILL } from '../volby/colors';
 import { activeCouncil, partyMeta } from '../volby/council';
 import { baselineShare } from '../volby/compute';
 import { fmtPct, fmtShortTime } from '../volby/format';
+import { reducedMotion } from '../utils/motion';
 
 function FitBounds({ data, padTop = 12 }) {
     const map = useMap();
@@ -56,7 +57,7 @@ function FocusSelected({ data, selectedId, insetTop, insetBottom }) {
             const p = map.latLngToContainerPoint(L.geoJSON(feature).getBounds().getCenter());
             const dx = p.x < 24 || p.x > size.x - 24 ? p.x - size.x / 2 : 0;
             const dy = p.y < top + 16 || p.y > bottom - 16 ? p.y - (top + bottom) / 2 : 0;
-            if (dx || dy) map.panBy([dx, dy], { animate: !matchMedia('(prefers-reduced-motion: reduce)').matches });
+            if (dx || dy) map.panBy([dx, dy], { animate: !reducedMotion() });
         }, 60);
         return () => clearTimeout(t);
     }, [map, data, selectedId, insetTop, insetBottom]);

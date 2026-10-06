@@ -5,6 +5,7 @@ import { activeCouncil, partyMeta } from '../volby/council';
 import { sumSeats } from '../volby/compute';
 import { fmtInt, fmtPct, mandatesLabel } from '../volby/format';
 import { Card, PartyChip, SectionTitle } from './ui';
+import { scrollBehavior } from '../utils/motion';
 
 // Políčko za každý mandát, barevně podle stran v koalici, značka za většinou
 export function SeatBar({ seatsById, members, height = 'h-3' }) {
@@ -175,7 +176,7 @@ export default function CoalitionPanel({ model }) {
         setPicked(members);
         const el = builderRef.current;
         if (el && el.getBoundingClientRect().top < 0) {
-            el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+            el.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
         }
     };
 

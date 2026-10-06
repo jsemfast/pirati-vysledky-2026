@@ -7,6 +7,7 @@ import { MAP_MODES, getMapMode, mapModesFor } from '../volby/mapModes';
 import { textOn } from '../volby/colors';
 import { fmtInt, fmtPct, fmtShortTime } from '../volby/format';
 import { Card, Delta, SectionTitle } from './ui';
+import { scrollBehavior } from '../utils/motion';
 
 // Pirátská kandidátka a její předchůdce v roce 2022 (null = žádný)
 const ourId = () => activeCouncil().pirates;
@@ -66,7 +67,7 @@ export function MapControls({ modeId, onMode, partyId, onParty, parties, compact
         const active = row?.querySelector('[aria-pressed="true"]');
         if (!compact || !active) return;
         const left = active.offsetLeft - (row.clientWidth - active.offsetWidth) / 2;
-        row.scrollTo({ left, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        row.scrollTo({ left, behavior: scrollBehavior() });
     }, [modeId, compact]);
     return (
         <div className={`bg-white/95 backdrop-blur rounded-xl shadow-lg border border-neutral-200 ${compact ? 'p-2' : 'p-2.5'}`}>

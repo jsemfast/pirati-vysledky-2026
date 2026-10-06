@@ -136,3 +136,21 @@ body {
 .okrsek-fresh {
   animation: okrsek-flash 3s ease-out 2;
 }
+
+/* Vypnuté animace v systému: nic nebliká ani nepulzuje, rolování skokem.
+   Čerstvě sečtený okrsek zůstane jen staticky žlutě orámovaný. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .okrsek-fresh {
+    animation: none;
+    stroke: #fec900;
+    stroke-width: 3px;
+  }
+}
