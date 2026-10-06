@@ -169,7 +169,8 @@ function PirateCard({ council, summary, lists, fresh }) {
     );
 }
 
-// Řádek MČ, kde Piráti nekandidují: stav sčítání a kdo vede
+// Dlaždice MČ, kde Piráti nekandidují: stav sčítání a kdo vede. Dva
+// sloupce i na telefonu — 36 řádků přes celou šířku bylo přes dva metry rolování.
 function OtherRow({ council, summary, lists, fresh }) {
     const live = summary?.votes > 0;
     const [leadId, leadVotes, leadSeats] = live ? summary.parties[0] : [];
@@ -177,22 +178,20 @@ function OtherRow({ council, summary, lists, fresh }) {
     return (
         <a
             href={href(council)}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 bg-white border hover:border-black transition ${fresh ? 'border-[#FEC900] ring-1 ring-[#FEC900]' : 'border-neutral-200'}`}
+            className={`block min-w-0 rounded-xl px-3 py-2.5 bg-white border hover:border-black active:bg-neutral-50 transition ${fresh ? 'border-[#FEC900] ring-1 ring-[#FEC900]' : 'border-neutral-200'}`}
         >
-            <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-neutral-900 truncate">{council.name.replace(/^Praha-/, '')}</div>
-                <div className="text-[11px] text-neutral-500 truncate">
-                    {live ? (
-                        <>
-                            <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ backgroundColor: lead?.color || '#6B7280' }} />
-                            {lead?.tiny || `č. ${leadId}`} {fmtPct((leadVotes / summary.votes) * 100)} · {leadSeats}/{council.seats}
-                        </>
-                    ) : (
-                        `${council.seats} mandátů · ${council.precincts} ${plural(council.precincts, 'okrsek', 'okrsky', 'okrsků')}`
-                    )}
-                </div>
+            <div className="text-sm font-semibold text-neutral-900 truncate">{council.name.replace(/^Praha-/, '')}</div>
+            <div className="text-[11px] text-neutral-500 truncate">
+                {live ? (
+                    <>
+                        <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ backgroundColor: lead?.color || '#6B7280' }} />
+                        {lead?.tiny || `č. ${leadId}`} {fmtPct((leadVotes / summary.votes) * 100)} · {leadSeats}/{council.seats}
+                    </>
+                ) : (
+                    `${council.seats} mandátů · ${council.precincts} ${plural(council.precincts, 'okrsek', 'okrsky', 'okrsků')}`
+                )}
             </div>
-            <div className="shrink-0 text-right whitespace-nowrap"><CountBadge summary={summary} /></div>
+            {summary && summary.phase !== 'pre' && <div className="mt-1"><CountBadge summary={summary} /></div>}
         </a>
     );
 }
@@ -390,7 +389,7 @@ export default function Landing() {
                     Ostatní městské části <span className="text-neutral-400">{OTHERS.length}</span>
                 </h2>
                 <p className="mt-1 text-xs text-neutral-500">Piráti tu letos nekandidují — výsledky všech kandidátek po rozkliknutí.</p>
-                <div className="mt-3 grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-3 grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                     {OTHERS.map((c) => (
                         <OtherRow key={c.slug} council={c} summary={s[c.zastup]} lists={lists[c.zastup]} fresh={fresh.has(String(c.zastup))} />
                     ))}
