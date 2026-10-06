@@ -337,6 +337,7 @@ export default function CouncilApp({ council }) {
                 geoJson={withMap ? statics.geoJson : null}
                 selectedId={selectedId}
                 onSelectPrecinct={selectPrecinct}
+                onOpenPrecincts={isMobile ? () => switchTab(hasPrecincts ? 'precincts' : 'map') : undefined}
             />
 
             {isMobile ? (

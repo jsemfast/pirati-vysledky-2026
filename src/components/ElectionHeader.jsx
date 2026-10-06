@@ -150,7 +150,7 @@ function CouncilMenu({ demo }) {
     );
 }
 
-export default function ElectionHeader({ live, snapshot, demo, geoJson, selectedId, onSelectPrecinct }) {
+export default function ElectionHeader({ live, snapshot, demo, geoJson, selectedId, onSelectPrecinct, onOpenPrecincts }) {
     const now = useNow(1000);
     const council = activeCouncil();
     const phase = snapshot?.phase || 'pre';
@@ -196,7 +196,7 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
                 </div>
                 {snapshot && phase !== 'pre' && geoJson && (
                     <div className="mt-2">
-                        <PrecinctStrip geoJson={geoJson} snapshot={snapshot} freshIds={live.freshIds} selectedId={selectedId} onSelect={onSelectPrecinct} />
+                        <PrecinctStrip geoJson={geoJson} snapshot={snapshot} freshIds={live.freshIds} selectedId={selectedId} onSelect={onSelectPrecinct} onOpen={onOpenPrecincts} />
                     </div>
                 )}
                 {snapshot && phase !== 'pre' && !geoJson && p && (

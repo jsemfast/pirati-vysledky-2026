@@ -12,31 +12,46 @@ import { Card, Delta, SectionTitle } from './ui';
 const ourId = () => activeCouncil().pirates;
 const ourBaseline = () => partyMeta(ourId()).baseline?.ids || null;
 
-export function PrecinctStrip({ geoJson, snapshot, freshIds, selectedId, onSelect }) {
+// onOpen = mobil: jednotlivé dílky (pár px) se nedají trefit prstem, takže
+// celý pruh je jedno tlačítko, které otevře seznam okrsků
+export function PrecinctStrip({ geoJson, snapshot, freshIds, selectedId, onSelect, onOpen }) {
     const ids = useMemo(
         () => (geoJson?.features || []).map((f) => String(f.properties.cislo)).sort(),
         [geoJson],
     );
     const fresh = new Set(freshIds || []);
+    const cells = ids.map((id) => {
+        const o = snapshot?.okrsky?.[id];
+        const w = precinctWinner(o);
+        const Tag = onOpen ? 'span' : 'button';
+        return (
+            <Tag
+                key={id}
+                {...(onOpen ? {} : { title: `Okrsek ${id}${o ? '' : ' — čeká'}`, 'aria-label': `Okrsek ${id}`, onClick: () => onSelect(id) })}
+                className={`flex-1 rounded-[2px] transition-colors duration-700 ${fresh.has(id) ? 'animate-pulse' : ''} ${
+                    selectedId === id ? 'ring-2 ring-[#FEC900] ring-offset-1 ring-offset-[#000000]' : ''
+                }`}
+                // na černé hlavičce mají Piráti žlutou (jejich barva = barva pozadí)
+                style={{ backgroundColor: o ? (w ? colorOnDark(w.id) : '#FFFFFF') : 'rgba(255,255,255,0.18)' }}
+            />
+        );
+    });
+    if (onOpen) {
+        const counted = ids.filter((id) => snapshot?.okrsky?.[id]).length;
+        return (
+            <button
+                type="button"
+                onClick={onOpen}
+                aria-label={`Sečteno ${counted} z ${ids.length} okrsků — otevřít seznam`}
+                className="block w-full py-3 -my-3"
+            >
+                <span className="flex gap-[2px] h-2.5" aria-hidden="true">{cells}</span>
+            </button>
+        );
+    }
     return (
-        <div className="flex gap-[2px] h-2.5" role="list" aria-label="Sečtené okrsky">
-            {ids.map((id) => {
-                const o = snapshot?.okrsky?.[id];
-                const w = precinctWinner(o);
-                return (
-                    <button
-                        key={id}
-                        role="listitem"
-                        title={`Okrsek ${id}${o ? '' : ' — čeká'}`}
-                        onClick={() => onSelect(id)}
-                        className={`flex-1 rounded-[2px] transition-colors duration-700 ${fresh.has(id) ? 'animate-pulse' : ''} ${
-                            selectedId === id ? 'ring-2 ring-[#FEC900] ring-offset-1 ring-offset-[#000000]' : ''
-                        }`}
-                        // na černé hlavičce mají Piráti žlutou (jejich barva = barva pozadí)
-                        style={{ backgroundColor: o ? (w ? colorOnDark(w.id) : '#FFFFFF') : 'rgba(255,255,255,0.18)' }}
-                    />
-                );
-            })}
+        <div className="flex gap-[2px] h-2.5" aria-label="Sečtené okrsky">
+            {cells}
         </div>
     );
 }
