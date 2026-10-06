@@ -348,7 +348,7 @@ export default function Landing() {
         <div className="min-h-dvh bg-[#F3F3F1] text-neutral-900 overflow-y-auto">
             <Hero snapshot={snapshot} live={live} lists={lists} />
 
-            <main className="max-w-5xl mx-auto px-4 md:px-5 pt-5 pb-12">
+            <main className="max-w-5xl mx-auto px-4 md:px-5 pt-5 pb-24">
                 {DEMO && (
                     <div className="mb-4 rounded-xl bg-[#FFF6D1] border border-[#FEC900] text-neutral-900 text-xs px-3 py-2">
                         <b>Demo</b> — simulované sčítání odvozené z výsledků 2022, ne skutečná data ani predikce.{' '}

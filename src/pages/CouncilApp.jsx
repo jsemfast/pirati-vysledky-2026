@@ -167,6 +167,17 @@ export default function CouncilApp({ council }) {
             : `${council.name} · Volby 2026 · Piráti`;
     }, [model, council.name]);
 
+    // Detail okrsku na mobilu je spodní panel přes mapu — brouk by v něm
+    // zakrýval čísla (viz BugReportWidget, body[data-sheet])
+    const sheetOpen = isMobile && tab === 'map' && !!selectedId;
+    useEffect(() => {
+        if (!sheetOpen) return undefined;
+        document.body.dataset.sheet = '';
+        return () => {
+            delete document.body.dataset.sheet;
+        };
+    }, [sheetOpen]);
+
     const selectPrecinct = (id) => {
         setSelectedId(id);
         if (isMobile && council.map) setTab('map');
@@ -212,7 +223,7 @@ export default function CouncilApp({ council }) {
                 />
             </div>
             {counted === 0 && !selectedId && (
-                <div className={`absolute z-[1000] ${isMobile ? 'bottom-2 left-2 right-2' : 'bottom-6 left-3'} rounded-xl bg-black/90 text-white text-xs px-3 py-2 shadow-lg`}>
+                <div className={`absolute z-[1000] ${isMobile ? 'bottom-2 left-2 right-16' : 'bottom-6 left-3'} rounded-xl bg-black/90 text-white text-xs px-3 py-2 shadow-lg`}>
                     Ještě se nesčítá — mapa zatím ukazuje <b className="text-[#FEC900]">komunální volby 2022</b> (předchůdci dnešních kandidátek).
                 </div>
             )}
@@ -314,7 +325,7 @@ export default function CouncilApp({ council }) {
             {isMobile ? (
                 <>
                     <main className="flex-1 min-h-0 relative">
-                        {activeTab === 'map' ? map : <div className="h-full overflow-y-auto px-3 pt-3 pb-4">{panels[activeTab]}</div>}
+                        {activeTab === 'map' ? map : <div className="h-full overflow-y-auto px-3 pt-3 pb-20">{panels[activeTab]}</div>}
                     </main>
                     <nav
                         className="shrink-0 bg-white border-t border-neutral-200 grid pb-[env(safe-area-inset-bottom)] z-[1200]"

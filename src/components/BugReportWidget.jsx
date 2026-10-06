@@ -19,9 +19,33 @@ function BugIcon({ className = 'w-5 h-5' }) {
     );
 }
 
+// Brouk na mobilu překrývá pravý sloupec čísel (mandáty, procenta) — při
+// posouvání dolů uhne, při posunu nahoru (nebo nahoře na stránce) se vrátí.
+// Scroll událost nebublá, proto capture na dokumentu: chytí i vnitřní
+// posuvné panely stránky zastupitelstva.
+function useHideOnScroll() {
+    const [hidden, setHidden] = useState(false);
+    useEffect(() => {
+        const last = new WeakMap();
+        const onScroll = (e) => {
+            const el = e.target === document ? document.scrollingElement : e.target;
+            if (!el || typeof el.scrollTop !== 'number') return;
+            const y = el.scrollTop;
+            const prev = last.get(el) ?? 0;
+            last.set(el, y);
+            if (y < 40 || y < prev) setHidden(false);
+            else if (y > prev) setHidden(true);
+        };
+        document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+        return () => document.removeEventListener('scroll', onScroll, { capture: true });
+    }, []);
+    return hidden;
+}
+
 // raised = stránka zastupitelstva: na mobilu nad spodní lištou záložek,
 // na desktopu nad atribucí mapy
 export default function BugReportWidget({ raised = false }) {
+    const scrolledAway = useHideOnScroll();
     const [open, setOpen] = useState(false);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -118,7 +142,10 @@ export default function BugReportWidget({ raised = false }) {
                     onClick={openForm}
                     aria-label="Nahlásit chybu"
                     title="Nahlásit chybu"
-                    className={`fixed ${position} z-[2500] w-11 h-11 rounded-full bg-black text-[#FEC900] shadow-lg ring-2 ring-white/70 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform`}
+                    // body[data-sheet] = na mobilu je otevřený detail okrsku přes mapu
+                    className={`fixed ${position} z-[2500] w-11 h-11 rounded-full bg-black text-[#FEC900] shadow-lg ring-2 ring-white/70 flex items-center justify-center hover:scale-105 active:scale-95 transition-[transform,opacity] duration-200 [body[data-sheet]_&]:hidden ${
+                        scrolledAway ? 'translate-y-24 opacity-0 pointer-events-none' : ''
+                    }`}
                 >
                     <BugIcon className="w-6 h-6" />
                 </button>
