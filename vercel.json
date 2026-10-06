@@ -1,0 +1,21 @@
+{
+  "rewrites": [
+    { "source": "/praha-3", "destination": "/index.html" },
+    { "source": "/praha-6", "destination": "/index.html" },
+    { "source": "/praha-11", "destination": "/index.html" },
+    { "source": "/praha", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/volby.js": { "maxDuration": 30 }
+  },
+  "headers": [
+    {
+      "source": "/data/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=86400" }]
+    },
+    {
+      "source": "/media/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }]
+    }
+  ]
+}

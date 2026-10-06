@@ -1,0 +1,9 @@
+node_modules
+dist
+.cache
+.vercel
+.env*
+!.env.example
+*.log
+.DS_Store
+.gstack/
