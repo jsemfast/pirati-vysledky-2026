@@ -29,7 +29,8 @@ const ICONS = {
     map: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7',
     councilors: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
     coalition: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
-    precincts: 'M3 7h18M3 12h18M3 17h18',
+    // ne tři čáry — to je ikona menu v hlavičce
+    precincts: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
 };
 
 // Výška prvku (ResizeObserver) — ovládání a detail okrsku leží přes mapu
@@ -380,6 +381,7 @@ export default function CouncilApp({ council }) {
                         {activeTab === 'map' ? map : <div ref={scrollRef} className="h-full overflow-y-auto px-3 pt-3 pb-20">{panels[activeTab]}</div>}
                     </main>
                     <nav
+                        aria-label="Sekce výsledků"
                         className="shrink-0 bg-white border-t border-neutral-200 grid pb-[env(safe-area-inset-bottom)] z-[1200]"
                         style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
                     >
@@ -387,6 +389,7 @@ export default function CouncilApp({ council }) {
                             <button
                                 key={t.id}
                                 onClick={() => switchTab(t.id)}
+                                aria-current={activeTab === t.id ? 'page' : undefined}
                                 className={`flex flex-col items-center gap-0.5 py-2 font-condensed text-[11px] font-bold short:flex-row short:justify-center short:gap-1.5 short:py-1.5 short:text-xs ${activeTab === t.id ? 'text-black' : 'text-neutral-400'}`}
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,6 +409,7 @@ export default function CouncilApp({ council }) {
                                 <button
                                     key={t.id}
                                     onClick={() => switchTab(t.id)}
+                                    aria-current={activeTab === t.id ? 'page' : undefined}
                                     className={`flex-1 rounded-lg px-2 py-1.5 font-condensed text-sm font-bold uppercase tracking-wide transition-colors ${
                                         activeTab === t.id ? 'bg-black text-white' : 'text-neutral-500 hover:bg-white'
                                     }`}
