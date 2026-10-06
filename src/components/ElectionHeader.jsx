@@ -191,7 +191,7 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
         <header className="bg-black text-white shrink-0 z-[1200] relative">
             <div className="px-4 pt-3 pb-2.5 md:px-5 short:pt-1.5 short:pb-1.5">
                 <div className="flex items-center gap-3">
-                    <a href={demo ? '/?demo' : '/'} className="shrink-0 py-2.5 -my-2.5" aria-label="Přehled zastupitelstev">
+                    <a href={demo ? '/?demo' : '/'} className="shrink-0 py-2.5 -my-2.5 px-2.5 -mx-2.5" aria-label="Přehled zastupitelstev">
                         {/* pod 360 px (iPhone SE) jen vlajka — celé logo by vytlačilo název MČ */}
                         <picture>
                             <source media="(max-width: 359px)" srcSet="/brand/favicon.svg" />
