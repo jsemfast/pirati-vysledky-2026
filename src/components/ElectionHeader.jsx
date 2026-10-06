@@ -2,6 +2,8 @@
 // ruční obnovení, pruh okrsků a přepínač zastupitelstev.
 import React, { useState } from 'react';
 import { useNow } from '../hooks/useNow';
+import { APP_VERSION } from '../changelog';
+import { openChangelog } from '../utils/openChangelog';
 import { COUNCILS, POLLS_CLOSE } from '../councils';
 import { activeCouncil } from '../volby/council';
 import { countdown, fmtPct, fmtShortTime, fmtTime, parseCsuTime } from '../volby/format';
@@ -20,6 +22,42 @@ export function StatusPill({ phase, demo, stale }) {
         );
     }
     return <span className={`${base} bg-white/15 text-white/80`}>PŘED VOLBAMI</span>;
+}
+
+const fmtWait = (sec) => (sec >= 90 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec} s`);
+
+// Ruční obnovení. Do konce odpočtu do další kontroly je ztlumené a kliknutí
+// jen řekne, kdy to půjde — dřívější dotaz by zbytečně zatěžoval (data se
+// stejně obnovují po minutě).
+export function RefreshButton({ live, now, demo = false, showLabel = 'hidden sm:inline' }) {
+    const [hint, setHint] = useState(false);
+    const nextIn = live.nextAt ? Math.max(0, Math.ceil((live.nextAt - now) / 1000)) : null;
+    const blocked = !demo && nextIn !== null && nextIn > 0;
+    const onClick = () => {
+        if (live.refresh()) return;
+        setHint(true);
+        setTimeout(() => setHint(false), 3000);
+    };
+    return (
+        <button
+            onClick={onClick}
+            className={`relative flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                blocked ? 'text-white/45 cursor-not-allowed' : 'text-white/80 hover:text-white hover:bg-white/10'
+            }`}
+            aria-label={blocked ? `Obnovit půjde za ${fmtWait(nextIn)}` : 'Obnovit výsledky'}
+            title={blocked ? `Další kontrola za ${fmtWait(nextIn)}` : 'Obnovit výsledky'}
+        >
+            <svg className={`w-4 h-4 ${live.fetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span className={`${showLabel} tabular-nums`}>{nextIn === null ? 'pauza' : fmtWait(nextIn)}</span>
+            {hint && (
+                <span className="absolute top-full right-0 mt-1 z-10 whitespace-nowrap rounded bg-white text-neutral-700 text-[11px] font-normal px-2 py-1 shadow">
+                    {nextIn ? <>Obnovit půjde za <b>{fmtWait(nextIn)}</b> — dřív nová data stejně nebudou</> : 'Zkus to za chvilku'}
+                </span>
+            )}
+        </button>
+    );
 }
 
 function CouncilMenu({ demo }) {
@@ -96,6 +134,10 @@ function CouncilMenu({ demo }) {
                         </nav>
                         <div className="p-4 border-t border-neutral-100 text-[11px] text-neutral-400 leading-relaxed">
                             Data: ČSÚ (volby.gov.cz). Loga a část fotek: programydovoleb.cz. Mandáty do vyhlášení ČSÚ = odhad.
+                            <div className="mt-2 flex items-center justify-between text-xs">
+                                <span>Verze {APP_VERSION}</span>
+                                <button onClick={openChangelog} className="font-semibold text-black hover:underline">Co je nové</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -106,19 +148,10 @@ function CouncilMenu({ demo }) {
 
 export default function ElectionHeader({ live, snapshot, demo, geoJson, selectedId, onSelectPrecinct }) {
     const now = useNow(1000);
-    const [refreshHint, setRefreshHint] = useState(false);
     const council = activeCouncil();
     const phase = snapshot?.phase || 'pre';
     const p = snapshot?.precincts;
     const dataTime = demo ? snapshot?.fetchedAt : parseCsuTime(snapshot?.generated);
-    const nextIn = live.nextAt ? Math.max(0, Math.round((live.nextAt - now) / 1000)) : null;
-
-    const onRefresh = () => {
-        if (!live.refresh()) {
-            setRefreshHint(true);
-            setTimeout(() => setRefreshHint(false), 2500);
-        }
-    };
 
     let line;
     if (!snapshot) line = live.status === 'error' ? 'Výsledky se nepodařilo načíst — zkusím to znovu.' : 'Načítám výsledky…';
@@ -144,23 +177,7 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
                             {council?.name}<span className="hidden sm:inline"> <span className="text-[#FEC900]">·</span> výsledky</span>
                         </h1>
                     </div>
-                    <button
-                        onClick={onRefresh}
-                        className="relative flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10"
-                        aria-label="Obnovit výsledky"
-                    >
-                        <svg className={`w-4 h-4 ${live.fetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span className="hidden sm:inline tabular-nums">
-                            {nextIn === null ? 'pauza' : nextIn >= 90 ? `${Math.floor(nextIn / 60)}:${String(nextIn % 60).padStart(2, '0')}` : `${nextIn} s`}
-                        </span>
-                        {refreshHint && (
-                            <span className="absolute top-full right-0 mt-1 whitespace-nowrap rounded bg-white text-neutral-700 text-[10px] px-2 py-1 shadow">
-                                Data jsou čerstvá — ČSÚ je obnovuje po minutě
-                            </span>
-                        )}
-                    </button>
+                    <RefreshButton live={live} now={now} demo={demo} />
                     <CouncilMenu demo={demo} />
                 </div>
 

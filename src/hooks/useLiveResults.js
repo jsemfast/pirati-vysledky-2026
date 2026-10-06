@@ -7,7 +7,10 @@
 //    uzavření místností), při sčítání 60 s (ČSÚ data stejně cachuje 60 s),
 //    po vyhlášení mandátů 15 min; ±15 % jitter, ať se klienti nesešikují,
 //  - skrytý panel/tab = žádné dotazy; po návratu dotaz jen když jsou data stará,
-//  - chyby = exponenciální backoff 1 → 2 → 4 → 8 → 10 min.
+//  - chyby = exponenciální backoff 1 → 2 → 4 → 8 → 10 min,
+//  - obnovit dřív, než vyprší odpočet do další kontroly, nejde — ani
+//    tlačítkem, ani reloadem stránky (poslední snapshot a čas další kontroly
+//    drží sessionStorage, reload ho jen ukáže a počká).
 // Zdroj (source) je buď jedno zastupitelstvo (councilSource), nebo přehled
 // všech zastupitelstev (OVERVIEW_SOURCE, /api/prehled).
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -21,6 +24,8 @@ const MANUAL_GAP_MS = 15e3;
 const PROXY_RETRY_MS = 3 * 60e3;
 const PROXY_TIMEOUT_MS = 15e3;
 const arrivalsKey = (source) => `kv26.arrivals.${source.key}`;
+const SNAP_PREFIX = 'kv26.snap.';
+const MAX_CACHED_WAIT_MS = 15 * 60e3;
 
 // Zdroj = jedno zastupitelstvo; objekt je pro dané zastupitelstvo vždy
 // stejný (hook podle něj plánuje dotazy)
@@ -88,6 +93,34 @@ function writeArrivals(source, map) {
     }
 }
 
+// Poslední úspěšný snapshot záložky (sessionStorage = přežije reload, ne
+// zavření záložky). Platí jen do naplánované další kontroly.
+function readCached(source) {
+    try {
+        const c = JSON.parse(sessionStorage.getItem(SNAP_PREFIX + source.key) || 'null');
+        const wait = (c?.nextAt || 0) - Date.now();
+        return c?.snapshot?.v === source.version && wait > 0 && wait <= MAX_CACHED_WAIT_MS ? c : null;
+    } catch {
+        return null;
+    }
+}
+
+function writeCached(source, entry) {
+    const key = SNAP_PREFIX + source.key;
+    const body = JSON.stringify(entry);
+    try {
+        sessionStorage.setItem(key, body);
+    } catch {
+        // plná kvóta (Magistrát + desítky MČ) → staré snapshoty pryč, zkusit znovu
+        try {
+            for (const k of Object.keys(sessionStorage)) if (k.startsWith(SNAP_PREFIX)) sessionStorage.removeItem(k);
+            sessionStorage.setItem(key, body);
+        } catch {
+            /* private mode — reload pak stáhne data znovu */
+        }
+    }
+}
+
 function delayFor(phase, errors, demo) {
     if (demo) return DEMO_INTERVAL;
     if (errors > 0) return Math.min(60e3 * 2 ** (errors - 1), 10 * 60e3);
@@ -100,26 +133,29 @@ function delayFor(phase, errors, demo) {
 // source = councilSource(council) nebo OVERVIEW_SOURCE
 export function useLiveResults({ source: target, demo = false, demoFeed = null }) {
     const idle = demo && !demoFeed;
-    const [snapshot, setSnapshot] = useState(null);
-    const [state, setState] = useState({
-        status: 'loading', // loading | ok | error
-        source: null, // proxy | direct | demo
-        stale: false,
-        error: null,
-        lastSuccess: null,
-        nextAt: null,
+    // Reload před vypršením odpočtu: ukázat poslední data a počkat
+    const [cached] = useState(() => (demo ? null : readCached(target)));
+    const [snapshot, setSnapshot] = useState(() => cached?.snapshot ?? null);
+    const [state, setState] = useState(() => ({
+        status: cached ? 'ok' : 'loading', // loading | ok | error
+        source: cached?.source ?? null, // proxy | direct | demo
+        stale: cached?.stale ?? false,
+        error: cached?.error ?? null,
+        lastSuccess: cached?.lastSuccess ?? null,
+        nextAt: cached?.nextAt ?? null,
         fetching: false,
-    });
+    }));
     // okrsek → čas, kdy ho tenhle prohlížeč poprvé viděl sečtený (null = už při otevření)
     const [arrivals, setArrivals] = useState(() => (demo ? {} : readArrivals(target)));
     const [freshIds, setFreshIds] = useState([]);
 
     const timerRef = useRef(null);
+    const nextAtRef = useRef(cached?.nextAt ?? null);
     const errorsRef = useRef(0);
-    const lastAttemptRef = useRef(0);
+    const lastAttemptRef = useRef(cached?.lastAttempt ?? 0);
     const proxyDownUntilRef = useRef(0);
-    const phaseRef = useRef('pre');
-    const prevKeysRef = useRef(null);
+    const phaseRef = useRef(cached?.snapshot.phase ?? 'pre');
+    const prevKeysRef = useRef(cached ? new Set(Object.keys(cached.snapshot.okrsky || {})) : null);
     const runRef = useRef(null);
     const inFlightRef = useRef(false);
     const proxyFailsRef = useRef(0);
@@ -127,10 +163,12 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
     const schedule = useCallback((ms) => {
         clearTimeout(timerRef.current);
         if (document.hidden) {
+            nextAtRef.current = null;
             setState((s) => ({ ...s, nextAt: null }));
             return;
         }
         const at = Date.now() + ms;
+        nextAtRef.current = at;
         timerRef.current = setTimeout(() => runRef.current?.(), ms);
         setState((s) => ({ ...s, nextAt: at }));
     }, []);
@@ -146,6 +184,7 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
         let result = null;
         let source = demoFeed ? 'demo' : 'proxy';
         let error = null;
+        let stored = null;
         try {
             if (demoFeed) {
                 result = await demoFeed.snapshot();
@@ -204,14 +243,22 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
                 return next;
             });
             setFreshIds(added);
-            setSnapshot({ ...snap, phase });
-            setState((s) => ({
-                ...s,
-                status: 'ok',
+            stored = {
+                snapshot: { ...snap, phase },
                 source,
                 stale: result.stale,
                 error: result.stale ? result.error?.message || 'stale' : null,
                 lastSuccess: Date.now(),
+                lastAttempt: lastAttemptRef.current,
+            };
+            setSnapshot(stored.snapshot);
+            setState((s) => ({
+                ...s,
+                status: 'ok',
+                source,
+                stale: stored.stale,
+                error: stored.error,
+                lastSuccess: stored.lastSuccess,
                 fetching: false,
             }));
         } else {
@@ -225,7 +272,9 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
             }));
         }
         inFlightRef.current = false;
-        schedule(delayFor(phaseRef.current, errorsRef.current, !!demoFeed));
+        const delay = delayFor(phaseRef.current, errorsRef.current, !!demoFeed);
+        if (stored && !demoFeed) writeCached(target, { ...stored, nextAt: Date.now() + delay });
+        schedule(delay);
     }, [target, demoFeed, schedule]);
 
     useEffect(() => {
@@ -234,11 +283,17 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
 
     useEffect(() => {
         if (idle) return undefined;
-        // první načtení hned, ale mimo tělo efektu (setState v run)
-        timerRef.current = setTimeout(() => runRef.current?.(), 0);
+        // první načtení hned (po reloadu až po odpočtu), ale mimo tělo
+        // efektu (setState v run/schedule)
+        timerRef.current = setTimeout(() => {
+            const wait = cached && !demoFeed ? cached.nextAt - Date.now() : 0;
+            if (wait > 0) schedule(wait);
+            else runRef.current?.();
+        }, 0);
         const onVisible = () => {
             if (document.hidden) {
                 clearTimeout(timerRef.current);
+                nextAtRef.current = null;
                 setState((s) => ({ ...s, nextAt: null }));
                 return;
             }
@@ -257,11 +312,20 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
             document.removeEventListener('visibilitychange', onVisible);
             window.removeEventListener('online', onOnline);
         };
-    }, [run, schedule, demoFeed, idle]);
+    }, [run, schedule, demoFeed, idle, cached]);
 
-    // Ruční obnovení: nejvýš jednou za 15 s (vrací false, když je moc brzy)
+    // Ruční obnovení až po vypršení odpočtu do další plánované kontroly —
+    // dřív by jen zbytečně zatěžovalo (ČSÚ i CDN data stejně obnovují po
+    // minutě). Bez naplánované kontroly (skrytá záložka) nejvýš jednou za 15 s.
+    // Vrací false, když je moc brzy.
     const refresh = useCallback(() => {
-        if (Date.now() - lastAttemptRef.current < (demoFeed ? 1000 : MANUAL_GAP_MS)) return false;
+        const now = Date.now();
+        const early = demoFeed
+            ? now - lastAttemptRef.current < 1000
+            : nextAtRef.current
+                ? now < nextAtRef.current
+                : now - lastAttemptRef.current < MANUAL_GAP_MS;
+        if (early) return false;
         runRef.current?.();
         return true;
     }, [demoFeed]);

@@ -53,7 +53,10 @@ Konfigurace); jinde se karta koalice a režim mapy „Koalice" neukazují.
   s tím, kdo vede. Čerstvě změněné MČ krátce zablikají. Demo `/?demo`.
 - **Živé výsledky** — sečtené okrsky, účast, hlasy a procenta stran, automatické
   obnovení každou minutu (ČSÚ data stejně cachuje 60 s), odpočet do další
-  kontroly, ruční obnovení.
+  kontroly. Obnovit ručně (tlačítkem i reloadem stránky) jde až po jeho
+  vypršení.
+- **Verze a automatické aktualizace** — po nasazení nové verze se otevřené
+  stránky samy obnoví a jednou ukážou „Co je nové" (viz Verzování).
 - **Mandáty a zvolení** — do vyhlášení ČSÚ vlastní výpočet podle zákona
   (5% klauzule s přepočteným základem, d'Hondt, 10% hranice preferenčních
   hlasů); po vyhlášení oficiální čísla. Půlkruh zastupitelstva — klepnutím na
@@ -151,7 +154,11 @@ a nejvýš jednou za 2 minuty.
 - **Klient podle fáze** ([`useLiveResults`](src/hooks/useLiveResults.js)):
   před 14:00 jednou za 10 min (a probudí se přesně na uzavření místností),
   při sčítání 60 s ± 15 % jitter, po vyhlášení 15 min. Ve skryté záložce
-  nic, při chybách backoff až na 10 min, ruční obnovení nejvýš jednou za 15 s.
+  nic, při chybách backoff až na 10 min. **Ruční obnovení až po vypršení
+  odpočtu** do další kontroly: tlačítko je do té doby ztlumené a po kliknutí
+  jen řekne, za kolik to půjde. Reload stránky před koncem odpočtu nic
+  nestahuje — poslední snapshot a čas další kontroly drží `sessionStorage`
+  (`kv26.snap.*`), stránka je ukáže a počká na plánovaný čas.
 - **Ochrana zdroje.** Podmíněné dotazy (ETag), okrsky jen nové, časové
   limity (8 s funkce / 15 s prohlížeč), po chybě se soubor znovu zkouší až
   po intervalu a souběžné dotazy na stejný soubor se sdílí. Na okrskové
@@ -245,6 +252,33 @@ seats2022, seatsTotal2022 } }` do `DETAIL` — nic dalšího měnit netřeba.
 Hranice okrsků se filtrují podle `kod_mco` (MČ) nebo `kod_obec`
 — viz `buildCouncil()` ve skriptu.
 
+## Verzování a changelog
+
+Stejně jako v p3-analyza: zdroj pravdy je **`src/changelog.js`** — pole
+`CHANGELOG` (nejnovější verze první); verze prvního záznamu je aktuální
+verze aplikace (`APP_VERSION`).
+
+**Vydání nové verze = přidat záznam na začátek `CHANGELOG`** (verze, datum,
+titulek, položky s typem `new`/`improved`/`fixed`) a nasadit. Nic víc.
+Verzi v `package.json` udržujte synchronizovanou (jen informativně).
+
+Jak to funguje:
+
+- Vite plugin ve `vite.config.js` při buildu vygeneruje `dist/version.json`
+  s aktuální verzí (v dev serveru se servíruje on-the-fly). Pro
+  `/version.json` je ve `vercel.json` nastaveno `Cache-Control: no-store`.
+- `src/hooks/useUpdateCheck.js` na klientu kontroluje `/version.json` každých
+  5 minut a při návratu okna do popředí (nejvýš 1× za minutu) — ne každou
+  minutu, ať se ve volební noc nezdvojnásobí počet dotazů. Když se nasazená
+  verze liší od běžícího bundlu, `src/components/UpdateManager.jsx`
+  (mountovaný v `main.jsx` nad všemi stránkami) ukáže toast a **vynutí
+  reload** — na verzi jen jednou za session (pojistka proti smyčce; pak
+  zůstane tlačítko „Obnovit").
+- Changelog je dostupný přes „Co je nové" v menu stránek zastupitelstev
+  a v patičce přehledu. Po první návštěvě v nové verzi se uživateli jednou
+  automaticky ukáže přehled novinek od jeho poslední viděné verze
+  (`localStorage.kv26_seen_version`).
+
 ## Nasazení (Vercel)
 
 Projekt je čistý Vite + jedna serverless funkce, žádné proměnné prostředí
@@ -303,7 +337,9 @@ src/volby/compute.js      klauzule, d'Hondt, preference, koalice, srovnání s 2
 src/volby/model.js        odvozený model pro UI
 src/volby/council.js      metadata aktivního zastupitelstva (barvy, loga, osa)
 src/volby/demo.js         demo sčítání
-src/hooks/useLiveResults.js  polling, záloha, backoff (zastupitelstvo i přehled)
+src/hooks/useLiveResults.js  polling, záloha, backoff, blokace předčasného obnovení
+src/changelog.js          verze aplikace a changelog (zdroj pravdy)
+src/components/UpdateManager.jsx  automatická aktualizace + „Co je nové"
 src/pages/                Landing (/), CouncilApp (/<slug>)
 src/components/           hlavička, mapa, strany, zastupitelé, koalice, okrsky
 docs/MAGISTRAT.md         Magistrát: stav, plán, výpočetní náročnost

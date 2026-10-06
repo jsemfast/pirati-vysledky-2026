@@ -3,6 +3,27 @@ import { createRequire } from 'node:module'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { APP_VERSION } from './src/changelog.js'
+
+// Při buildu vypadne do dist/ soubor version.json s aktuální verzí
+// (zdroj pravdy je src/changelog.js). Klienti ho periodicky kontrolují
+// a po nasazení nové verze se sami obnoví — viz src/hooks/useUpdateCheck.js.
+function versionJson() {
+  const body = JSON.stringify({ version: APP_VERSION })
+  return {
+    name: 'version-json',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: body })
+    },
+    configureServer(server) {
+      server.middlewares.use('/version.json', (req, res) => {
+        res.setHeader('Content-Type', 'application/json')
+        res.setHeader('Cache-Control', 'no-store')
+        res.end(body)
+      })
+    },
+  }
+}
 
 // maplibre-gl si svůj web worker (a jeho shared chunk) hledá relativně k
 // vlastnímu souboru. Servírujeme je na stabilní cestě /maplibre/ — v devu
@@ -53,5 +74,5 @@ function apiDev() {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), maplibreWorkerAssets(), apiDev()],
+  plugins: [react(), tailwindcss(), versionJson(), maplibreWorkerAssets(), apiDev()],
 })
