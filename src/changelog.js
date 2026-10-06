@@ -12,6 +12,7 @@ export const CHANGELOG = [
         date: '2026-10-06',
         title: 'Pohodlnější ovládání na mobilu',
         items: [
+            { type: 'fixed', text: 'Společné kandidátky s Piráty mají celý název a vlastní logo (např. Piráti, PRAHA 3 SOBĚ a Edita Janečková; Piráti a Starostové), ne jen „Piráti"' },
             { type: 'fixed', text: 'Karty městských částí na přehledu se vejdou na šířku telefonu — počet mandátů byl mimo obrazovku' },
             { type: 'fixed', text: 'Menu zastupitelstev přes celou obrazovku, s odkazem zpět na přehled nahoře a rovnou u aktuální MČ' },
             { type: 'improved', text: 'Telefon na šířku dostane mobilní rozložení se spodní lištou místo stísněné desktopové verze' },
