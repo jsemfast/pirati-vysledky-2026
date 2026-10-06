@@ -137,16 +137,16 @@ export function LastSeatCard({ model }) {
         <Card className="p-4">
             <SectionTitle>Boj o poslední mandát</SectionTitle>
             <div className="text-sm text-neutral-700 space-y-1.5">
-                <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: holder.meta.color }} />
+                <div className="flex items-start gap-2">
+                    <span className="w-2.5 h-2.5 mt-1.5 rounded-full shrink-0" style={{ backgroundColor: holder.meta.color }} />
                     <span>{activeCouncil().seats}. mandát teď drží <b>{holder.meta.short}</b>{holder.margin !== null && <> (rezerva {fmtInt(holder.margin)} hl.)</>}</span>
                 </div>
                 {challenger && (
-                    <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: challenger.meta.color }} />
+                    <div className="flex items-start gap-2">
+                        <span className="w-2.5 h-2.5 mt-1.5 rounded-full shrink-0" style={{ backgroundColor: challenger.meta.color }} />
                         <span>
                             Nejblíž dalšímu: <b>{challenger.meta.short}</b> — chybí {fmtInt(challenger.toNext)} hl.
-                            <span className="text-neutral-400"> (≈ {fmtInt(Math.ceil(challenger.toNext / challenger.candidates))} voličů)</span>
+                            <span className="text-neutral-500"> (≈ {fmtInt(Math.ceil(challenger.toNext / challenger.candidates))} voličů)</span>
                         </span>
                     </div>
                 )}
