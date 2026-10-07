@@ -22,14 +22,14 @@ není tajný, tokeny jsou v secrets (viz níže).
   worker na **`/hlaseni/*`**.
 
 - **Návštěvnost** → Workers Analytics Engine (binding `STATS`, dataset
-  `pirati_vysledky_2026`): worker zapíše anonymní bod za každý dotaz
-  prohlížeče na `/api/volby`, `/api/prehled` a za načtení stránky (`/`
-  a `/<slug>`; kvůli `/` je v `wrangler.jsonc` `run_worker_first: ["/"]`).
-  Ukládá jen typ, zastupitelstvo, fázi voleb, mobil/desktop/robot, doménu
-  refereru a příznak dema — **žádné IP, cookies ani identifikátory**.
-  Prohlížeč se ptá v pevném intervalu (ve skryté záložce vůbec), takže
-  počet dotazů × interval ≈ kolik lidí se dívá. Čte se přes SQL API
-  (token s oprávněním Account Analytics Read), data drží Cloudflare 3 měsíce.
+  `pirati_vysledky_2026`). Aplikace posílá s každým dotazem na `/api/*`
+  hlavičku `X-Kv26-View`: kolik sekund od minulého dotazu byla stránka
+  otevřená a viditelná, jestli je to první dotaz po načtení stránky
+  (návštěva), doménu, odkud člověk přišel, a dotyk/myš. Worker z ní zapíše
+  jeden bod se zastupitelstvem — **žádné IP, cookies ani identifikátory**;
+  bez hlavičky (roboti, curl) nic. Diváci v úseku = Σ sekund / délka
+  úseku. Čte se přes SQL API (token s oprávněním Account Analytics Read),
+  data drží Cloudflare 3 měsíce.
 
 ## Secrets
 

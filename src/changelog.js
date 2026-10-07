@@ -8,6 +8,14 @@
 
 export const CHANGELOG = [
     {
+        version: '1.5.1',
+        date: '2026-10-07',
+        title: 'Anonymní měření návštěvnosti',
+        items: [
+            { type: 'improved', text: 'Počítáme, kolik lidí výsledky sleduje a na které městské části — anonymně, bez cookies, IP adres a jakýchkoli identifikátorů' },
+        ],
+    },
+    {
         version: '1.5.0',
         date: '2026-10-07',
         title: 'Piráti i na jiných kandidátkách',
