@@ -21,6 +21,16 @@ není tajný, tokeny jsou v secrets (viz níže).
   `../api/bug.js` → GitHub issue. Screenshoty do KV `HLASENI`, servíruje je
   worker na **`/hlaseni/*`**.
 
+- **Návštěvnost** → Workers Analytics Engine (binding `STATS`, dataset
+  `pirati_vysledky_2026`). Aplikace posílá s každým dotazem na `/api/*`
+  hlavičku `X-Kv26-View`: kolik sekund od minulého dotazu byla stránka
+  otevřená a viditelná, jestli je to první dotaz po načtení stránky
+  (návštěva), doménu, odkud člověk přišel, a dotyk/myš. Worker z ní zapíše
+  jeden bod se zastupitelstvem — **žádné IP, cookies ani identifikátory**;
+  bez hlavičky (roboti, curl) nic. Diváci v úseku = Σ sekund / délka
+  úseku. Čte se přes SQL API (token s oprávněním Account Analytics Read),
+  data drží Cloudflare 3 měsíce.
+
 ## Secrets
 
 - `CLOUDFLARE_API_TOKEN` — v GitHubu (Settings → Secrets and variables →

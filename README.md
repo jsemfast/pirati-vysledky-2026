@@ -320,6 +320,12 @@ Produkce: <https://pirati-vysledky-2026.pirati-vysledky-2026-cloudflare.workers.
 
 V repu žádné klíče nejsou — `account_id` ve `wrangler.jsonc` není tajný.
 
+Návštěvnost se počítá anonymně ve Workers Analytics Engine — bez IP,
+cookies a identifikátorů: aplikace ke každému dotazu na `/api/*` přidá
+hlavičku `X-Kv26-View` (kolik sekund byla stránka otevřená a viditelná,
+návštěva, odkud, dotyk/myš), worker ji zapíše se zastupitelstvem (viz
+[cloudflare/README.md](cloudflare/README.md)).
+
 Ověření cache — druhý dotaz musí vrátit `x-cache: HIT`:
 
 ```bash

@@ -13,6 +13,9 @@
   },
   // Screenshoty z nahlášených chyb (brouk), servíruje je worker na /hlaseni/*
   "kv_namespaces": [{ "binding": "HLASENI", "id": "b7339ed11a64454ca13bc202d571ee8a" }],
+  // Návštěvnost: anonymní počty (worker.js track()); dataset se založí sám
+  // při prvním zápisu, čte se přes SQL API (Account Analytics Read)
+  "analytics_engine_datasets": [{ "binding": "STATS", "dataset": "pirati_vysledky_2026" }],
   "durable_objects": {
     "bindings": [{ "name": "FEED", "class_name": "Feed" }]
   },

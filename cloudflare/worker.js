@@ -12,6 +12,9 @@
 // funkce — do DO jde zhruba jeden dotaz za 30 s na datacentrum
 // a zastupitelstvo. Hlavička x-cache: HIT/MISS slouží k ověření (obdoba
 // x-vercel-cache).
+//
+// Návštěvnost: anonymní počty do Workers Analytics Engine (viz track()) —
+// bez IP, cookies a jakýchkoli identifikátorů.
 import { DurableObject } from 'cloudflare:workers';
 import volby from '../api/volby.js';
 import prehled from '../api/prehled.js';
@@ -44,6 +47,38 @@ function runWith(handler, req) {
 }
 
 const SCREENSHOT_EXT = { 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+
+// Návštěvnost (Workers Analytics Engine, binding STATS). Aplikace posílá
+// s každým dotazem na /api/volby a /api/prehled hlavičku X-Kv26-View
+// (src/hooks/useLiveResults.js viewHeader): s = kolik sekund od minulého
+// dotazu byla stránka otevřená a viditelná, v=1 = první dotaz po načtení
+// stránky (návštěva), r = odkud přišla, t=1 = dotykové ovládání. Bez
+// hlavičky (roboti, curl, monitoring) se nic nezapisuje. Jeden bod:
+//   index   slug zastupitelstva / prehled (vzorkování zvlášť pro každé)
+//   blob1   volby | prehled        blob2 slug ('' = přehled)
+//   blob3   dotyk | mys            blob4 odkud ('' = přímo, '(web)' = z webu)
+//   double1 sekundy sledování      double2 návštěva (1/0)
+// Diváci v úseku = Σ sekund / délka úseku.
+const REF = /^(\(web\)|[a-z0-9.-]{1,80})$/;
+
+function track(env, request, kind, slug) {
+    const raw = request.headers.get('x-kv26-view');
+    if (!raw || request.method !== 'GET' || !env.STATS) return;
+    try {
+        const q = new URLSearchParams(raw);
+        const seconds = Math.min(1800, Math.max(0, Number(q.get('s')) || 0));
+        const visit = q.get('v') === '1';
+        const ref = (visit && q.get('r')?.toLowerCase()) || '';
+        env.STATS.writeDataPoint({
+            indexes: [slug || 'prehled'],
+            blobs: [kind, slug, q.get('t') === '1' ? 'dotyk' : 'mys', REF.test(ref) || !ref ? ref : '(jiné)'],
+            doubles: [seconds, visit ? 1 : 0],
+        });
+    } catch (error) {
+        // statistiky nesmí shodit odpověď
+        console.warn('stats', error);
+    }
+}
 
 export class Feed extends DurableObject {
     run(name, url) {
@@ -92,6 +127,9 @@ async function api(request, env, ctx, url) {
         // neznámé zastupitelstvo: 400 rovnou z handleru, DO se nezakládá
         if (!council) return reply(request, await runHandler('volby', url.pathname + url.search), 'BYPASS');
         path = `/api/volby?z=${council.zastup}`;
+        track(env, request, name, council.slug);
+    } else {
+        track(env, request, name, '');
     }
 
     const cache = caches.default;

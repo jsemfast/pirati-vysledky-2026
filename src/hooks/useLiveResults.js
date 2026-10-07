@@ -10,7 +10,9 @@
 //  - chyby = exponenciální backoff 1 → 2 → 4 → 8 → 10 min,
 //  - obnovit dřív, než vyprší odpočet do další kontroly, nejde — ani
 //    tlačítkem, ani reloadem stránky (poslední snapshot a čas další kontroly
-//    drží sessionStorage, reload ho jen ukáže a počká).
+//    drží sessionStorage, reload ho jen ukáže a počká),
+//  - každý dotaz na naše API nese hlavičku X-Kv26-View pro anonymní měření
+//    návštěvnosti (viewHeader níže, cloudflare/worker.js track()).
 // Zdroj (source) je buď jedno zastupitelstvo (councilSource), nebo přehled
 // všech zastupitelstev (OVERVIEW_SOURCE, /api/prehled).
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -63,9 +65,32 @@ export const OVERVIEW_SOURCE = {
     })),
 };
 
-async function fetchProxy(source) {
+// Anonymní návštěvnost: kolik sekund od minulého dotazu byla stránka otevřená
+// a viditelná (s), první dotaz po načtení stránky = návštěva (v) s doménou,
+// odkud člověk přišel (r), a dotykové ovládání (t). Žádné identifikátory.
+// Jen pro naše API (stejný původ) — na volby.gov.cz by vlastní hlavička
+// vynutila CORS preflight.
+const REFERRER = (() => {
+    try {
+        const host = new URL(document.referrer).hostname;
+        return host === window.location.hostname ? '(web)' : host.replace(/^(www|m|l|lm)\./, '');
+    } catch {
+        return '';
+    }
+})();
+const TOUCH = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+
+function viewHeader(seconds, visit) {
+    const q = new URLSearchParams({ s: String(Math.round(seconds)) });
+    if (visit) q.set('v', '1');
+    if (visit && REFERRER) q.set('r', REFERRER);
+    if (TOUCH) q.set('t', '1');
+    return q.toString();
+}
+
+async function fetchProxy(source, view) {
     const signal = typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(PROXY_TIMEOUT_MS) : undefined;
-    const res = await fetch(source.url, { headers: { Accept: 'application/json' }, signal });
+    const res = await fetch(source.url, { headers: { Accept: 'application/json', 'X-Kv26-View': view }, signal });
     const type = res.headers.get('content-type') || '';
     // Vite dev bez API / výpadek funkce vrátí HTML nebo chybu → záloha
     if (!type.includes('application/json')) throw new Error('proxy-unavailable');
@@ -160,6 +185,12 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
     const runRef = useRef(null);
     const inFlightRef = useRef(false);
     const proxyFailsRef = useRef(0);
+    // měření návštěvnosti: první dotaz této stránky, naplánovaná pauza před
+    // dalším dotazem a jak dlouho byla mezitím záložka skrytá
+    const visitRef = useRef(true);
+    const lastDelayRef = useRef(cached ? cached.nextAt - (cached.lastAttempt || cached.nextAt) : 0);
+    const hiddenMsRef = useRef(0);
+    const hiddenAtRef = useRef(null);
 
     const schedule = useCallback((ms) => {
         clearTimeout(timerRef.current);
@@ -180,7 +211,13 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
         if (inFlightRef.current) return;
         inFlightRef.current = true;
         clearTimeout(timerRef.current);
-        lastAttemptRef.current = Date.now();
+        // čas s otevřenou a viditelnou stránkou od minulého dotazu — nejvýš
+        // naplánovaná pauza (po návratu ze skryté záložky se nepočítá víc)
+        const started = Date.now();
+        const visibleMs = lastAttemptRef.current ? started - lastAttemptRef.current - hiddenMsRef.current : 0;
+        const viewSeconds = Math.max(0, Math.min(visibleMs, lastDelayRef.current) || 0) / 1000;
+        hiddenMsRef.current = 0;
+        lastAttemptRef.current = started;
         setState((s) => ({ ...s, fetching: true }));
         let result = null;
         let source = demoFeed ? 'demo' : 'proxy';
@@ -193,7 +230,9 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
                 let goDirect = Date.now() < proxyDownUntilRef.current;
                 if (!goDirect) {
                     try {
-                        result = await fetchProxy(target);
+                        const visit = visitRef.current;
+                        visitRef.current = false;
+                        result = await fetchProxy(target, viewHeader(viewSeconds, visit));
                         proxyFailsRef.current = 0;
                     } catch (e) {
                         proxyFailsRef.current += 1;
@@ -274,6 +313,7 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
         }
         inFlightRef.current = false;
         const delay = delayFor(phaseRef.current, errorsRef.current, !!demoFeed);
+        lastDelayRef.current = delay;
         if (stored && !demoFeed) writeCached(target, { ...stored, nextAt: Date.now() + delay });
         schedule(delay);
     }, [target, demoFeed, schedule]);
@@ -291,13 +331,17 @@ export function useLiveResults({ source: target, demo = false, demoFeed = null }
             if (wait > 0) schedule(wait);
             else runRef.current?.();
         }, 0);
+        if (document.hidden) hiddenAtRef.current = Date.now();
         const onVisible = () => {
             if (document.hidden) {
+                hiddenAtRef.current = Date.now();
                 clearTimeout(timerRef.current);
                 nextAtRef.current = null;
                 setState((s) => ({ ...s, nextAt: null }));
                 return;
             }
+            if (hiddenAtRef.current !== null) hiddenMsRef.current += Date.now() - hiddenAtRef.current;
+            hiddenAtRef.current = null;
             const due = delayFor(phaseRef.current, errorsRef.current, !!demoFeed) * 0.85;
             const since = Date.now() - lastAttemptRef.current;
             if (since >= due) runRef.current?.();
