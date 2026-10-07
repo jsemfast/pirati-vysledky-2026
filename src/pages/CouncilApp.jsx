@@ -5,7 +5,7 @@
 import React, { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ElectionHeader from '../components/ElectionHeader';
 import PartyResults from '../components/PartyResults';
-import Councilors from '../components/Councilors';
+import Councilors, { PirateCandidates } from '../components/Councilors';
 import CoalitionPanel, { CoalitionHero, LastSeatCard } from '../components/Coalition';
 import Hemicycle from '../components/Hemicycle';
 import { ArrivalsFeed, MapControls, PrecinctDetail } from '../components/Precincts';
@@ -380,11 +380,12 @@ export default function CouncilApp({ council }) {
                     <a href={`/${council.slug}?demo`} className="inline-block py-1.5 -my-1.5 underline font-semibold">Spustit znovu</a> · <a href={`/${council.slug}`} className="inline-block py-1.5 -my-1.5 underline">Skutečné výsledky</a>
                 </div>
             )}
-            {!council.pirates && (
+            {!council.pirates && !council.pirateCandidates.length && (
                 <div className="rounded-xl bg-white border border-neutral-200 text-neutral-600 text-xs px-3 py-2">
                     V této městské části Piráti letos nekandidují — stránka ukazuje výsledky všech kandidátek.
                 </div>
             )}
+            {!council.pirates && <PirateCandidates model={model} />}
             {council.beta && (
                 <div className="rounded-xl bg-white border border-neutral-200 text-neutral-600 text-xs px-3 py-2">
                     <b>Beta:</b> {council.title} běží v lehkém režimu — bez mapy {council.precincts} okrsků. Mandáty, zastupitelé a koalice fungují.

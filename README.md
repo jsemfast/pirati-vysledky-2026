@@ -37,8 +37,12 @@ Piráti kandidují na Magistrátu a ve 21 MČ:
 | Praha-Řeporyje | `/praha-reporyje` | 15 | 3 | č. 3 PŘÍVĚTIVÉ ŘEPORYJE |
 | Praha-Zbraslav | `/praha-zbraslav` | 17 | 10 | č. 2 100pro Zbraslav |
 
-Ve zbylých 36 MČ (Praha 17, 19, 20, 21 a menší MČ) Piráti nekandidují —
-jejich stránky ukazují výsledky všech kandidátek bez pirátských prvků.
+Ve zbylých 36 MČ (Praha 17, 19, 20, 21 a menší MČ) Piráti nemají vlastní
+kandidátku — jejich stránky ukazují výsledky všech kandidátek. Ve čtyřech
+z nich kandidují členky Pirátů na kandidátkách místních uskupení (Dolní
+Měcholupy, Klánovice, Kunratice, Suchdol — `pirateCandidates` v
+`src/councils.js`); přehled je ukazuje ve vlastní sekci nad ostatními MČ
+a jejich stránky mají kartu s naší kandidátkou.
 Současnou koalici máme zadanou jen u Prahy 3, 6, 11 a Magistrátu (viz
 Konfigurace); jinde se karta koalice a režim mapy „Koalice" neukazují.
 
@@ -49,12 +53,16 @@ Konfigurace); jinde se karta koalice a režim mapy „Koalice" neukazují.
 - **Přehled celé Prahy** (`/`) — kolik mandátů mají Piráti dohromady ve
   všech MČ a na Magistrátu, karta každé MČ s Piráty (procento, mandáty,
   pořadí, sečtené okrsky, pruh mandátů všech stran, co chybí na další mandát
-  nebo přes 5% klauzuli), řazení podle MČ / procent / mandátů. Ostatní MČ
-  s tím, kdo vede. Čerstvě změněné MČ krátce zablikají. Demo `/?demo`.
+  nebo přes 5% klauzuli), řazení podle MČ / procent / mandátů. Pod nimi MČ,
+  kde jsou Piráti na kandidátce jiného uskupení (výsledek kandidátky,
+  preferenční hlasy a odhad mandátu naší kandidátky), a ostatní MČ s tím,
+  kdo vede. Čerstvě změněné MČ krátce zablikají. Demo `/?demo`.
 - **Živé výsledky** — sečtené okrsky, účast, hlasy a procenta stran, automatické
   obnovení každou minutu (ČSÚ data stejně cachuje 60 s), odpočet do další
-  kontroly. Obnovit ručně (tlačítkem i reloadem stránky) jde až po jeho
-  vypršení.
+  kontroly („obnoví se samo za 0:45"). Obnovit ručně (tlačítkem i reloadem
+  stránky) jde až po jeho vypršení. Při první návštěvě krátký průvodce
+  ([`WelcomeGuide`](src/components/WelcomeGuide.jsx), jednou na prohlížeč):
+  stránka se obnovuje sama, ruční obnovení nic nezrychlí.
 - **Verze a automatické aktualizace** — po nasazení nové verze se otevřené
   stránky samy obnoví a jednou ukážou „Co je nové" (viz Verzování).
 - **Mandáty a zvolení** — do vyhlášení ČSÚ vlastní výpočet podle zákona
@@ -152,8 +160,8 @@ prohlížeče ──(1×/min)──▶ CDN Vercelu ──(~2×/min/zastupitelstv
      └──────────────── záloha, když naše API 2× po sobě selže (CORS povolen) ───────────────────────┘
 ```
 
-Záloha přehledu přímo z prohlížeče čte jen 22 zastupitelstev s Piráty
-a nejvýš jednou za 2 minuty.
+Záloha přehledu přímo z prohlížeče čte jen 26 zastupitelstev s Piráty
+(včetně Pirátů na jiných kandidátkách) a nejvýš jednou za 2 minuty.
 
 ### Šetrnost ke kapacitě
 
@@ -238,7 +246,11 @@ Jediné místo s ručně zadaným politickým kontextem. Má dvě části:
     (jinak zkratky z registru ČSÚ; společná pirátská kandidátka dostane
     poznámku s výčtem členů automaticky),
   - `photos` — vlastní fotky (`public/media/<slug>/photos/`),
-  - `map`, `precinctFiles`, `title`, `beta` — u Magistrátu mapa vypnutá.
+  - `map`, `precinctFiles`, `title`, `beta` — u Magistrátu mapa vypnutá,
+  - `pirateCandidates` — členové Pirátů na kandidátce jiného uskupení v MČ
+    bez pirátské kandidátky (`{ list, n, name }`, podle příslušnosti
+    „Piráti" v `kandidati.json`); přehled pro ně počítá preferenční hlasy
+    a odhad mandátu.
 
 Koalici další MČ doplníš přidáním `'<slug>': { coalition: { lists, label,
 seats2022, seatsTotal2022 } }` do `DETAIL` — nic dalšího měnit netřeba.

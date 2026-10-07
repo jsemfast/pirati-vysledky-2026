@@ -8,6 +8,17 @@
 
 export const CHANGELOG = [
     {
+        version: '1.5.0',
+        date: '2026-10-07',
+        title: 'Piráti i na jiných kandidátkách',
+        items: [
+            { type: 'new', text: 'Přehled ukazuje nad ostatními městskými částmi i ty, kde naše členky kandidují na kandidátkách místních uskupení (Dolní Měcholupy, Klánovice, Kunratice, Suchdol) — jak si kandidátka vede a jestli by měly mandát' },
+            { type: 'new', text: 'Stránky těchto MČ mají kartu s naší kandidátkou, jejími preferenčními hlasy a odhadem mandátu' },
+            { type: 'new', text: 'Krátký průvodce při první návštěvě: stránka se obnovuje sama a ruční obnovení nic nezrychlí' },
+            { type: 'improved', text: 'U odpočtu je napsané, za jak dlouho se stránka sama obnoví — i na telefonu' },
+        ],
+    },
+    {
         version: '1.4.0',
         date: '2026-10-06',
         title: 'Pohodlnější ovládání na mobilu',
