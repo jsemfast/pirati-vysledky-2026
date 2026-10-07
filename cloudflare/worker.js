@@ -12,6 +12,9 @@
 // funkce — do DO jde zhruba jeden dotaz za 30 s na datacentrum
 // a zastupitelstvo. Hlavička x-cache: HIT/MISS slouží k ověření (obdoba
 // x-vercel-cache).
+//
+// Návštěvnost: anonymní počty dotazů do Workers Analytics Engine (viz
+// track()) — bez IP, cookies a jakýchkoli identifikátorů.
 import { DurableObject } from 'cloudflare:workers';
 import volby from '../api/volby.js';
 import prehled from '../api/prehled.js';
@@ -44,6 +47,60 @@ function runWith(handler, req) {
 }
 
 const SCREENSHOT_EXT = { 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+
+// Návštěvnost (Workers Analytics Engine, binding STATS). Jeden datový bod
+// = jeden GET prohlížeče, bez IP, cookies a identifikátorů:
+//   blob1 typ    volby (výsledky MČ) | prehled (přehled /) | page (načtení stránky)
+//   blob2 slug   praha-3, praha, … ('' = přehled /)
+//   blob3 fáze   pre | waiting | counting | final podle odpovědi ('' u page)
+//   blob4        mobil | desktop | bot
+//   blob5 odkud  doména refereru u page ('(web)' = z vlastního webu, '' = přímo)
+//   blob6 demo   '1' u page s ?demo
+//   double1      1
+// Prohlížeč se ptá v pevném intervalu podle fáze (useLiveResults: před
+// 14:00 po 10 min, při sčítání po 1 min, po vyhlášení po 15 min) a ve
+// skryté záložce vůbec — počet dotazů × interval ≈ kolik lidí se dívá.
+const MOBILE_UA = /Mobi|Android|iPhone|iPad|iPod/i;
+const BOT_UA = /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|headless|curl|wget|python|okhttp|undici|node-fetch|go-http/i;
+
+function deviceOf(request) {
+    const ua = request.headers.get('user-agent') || '';
+    if (!ua || BOT_UA.test(ua)) return 'bot';
+    return MOBILE_UA.test(ua) ? 'mobil' : 'desktop';
+}
+
+function referrerOf(request, url) {
+    try {
+        const host = new URL(request.headers.get('referer')).hostname;
+        return host === url.hostname ? '(web)' : host.replace(/^(www|m|l|lm)\./, '');
+    } catch {
+        return '';
+    }
+}
+
+function track(env, request, { kind, slug, phase = '', referrer = '', demo = false }) {
+    if (request.method !== 'GET' || !env.STATS) return;
+    try {
+        env.STATS.writeDataPoint({
+            indexes: [kind],
+            blobs: [kind, slug, phase, deviceOf(request), referrer, demo ? '1' : ''],
+            doubles: [1],
+        });
+    } catch (error) {
+        // statistiky nesmí shodit odpověď
+        console.warn('stats', error);
+    }
+}
+
+// Fáze voleb z odpovědi funkce (jde do statistik, v cache ji drží x-phase)
+function phaseOfBody(out) {
+    if (out.status !== 200) return '';
+    try {
+        return JSON.parse(out.body).phase || '';
+    } catch {
+        return '';
+    }
+}
 
 export class Feed extends DurableObject {
     run(name, url) {
@@ -87,11 +144,13 @@ async function api(request, env, ctx, url) {
     // Normalizovaná cesta: klíč cache i jméno DO, ostatní parametry se
     // zahodí (náhodný ?x= nesmí obejít cache)
     let path = '/api/prehled';
+    let slug = '';
     if (name === 'volby') {
         const council = councilByZastup(url.searchParams.get('z'));
         // neznámé zastupitelstvo: 400 rovnou z handleru, DO se nezakládá
         if (!council) return reply(request, await runHandler('volby', url.pathname + url.search), 'BYPASS');
         path = `/api/volby?z=${council.zastup}`;
+        slug = council.slug;
     }
 
     const cache = caches.default;
@@ -101,6 +160,8 @@ async function api(request, env, ctx, url) {
         const headers = Object.fromEntries(hit.headers);
         headers['cache-control'] = headers['x-client-cache-control'];
         delete headers['x-client-cache-control'];
+        track(env, request, { kind: name, slug, phase: headers['x-phase'] });
+        delete headers['x-phase'];
         return reply(request, { status: hit.status, headers, body: hit.body }, 'HIT');
     }
 
@@ -121,6 +182,7 @@ async function api(request, env, ctx, url) {
     // brát přednostně — do cache jde explicitní max-age, klient dostane
     // původní hlavičku funkce
     const ttl = sMaxAge(out.headers['cache-control']);
+    const phase = phaseOfBody(out);
     if (out.status === 200 && ttl > 0) {
         ctx.waitUntil(cache.put(cacheKey, new Response(out.body, {
             status: 200,
@@ -128,9 +190,11 @@ async function api(request, env, ctx, url) {
                 ...out.headers,
                 'cache-control': `public, max-age=${ttl}`,
                 'x-client-cache-control': out.headers['cache-control'],
+                'x-phase': phase,
             },
         })));
     }
+    track(env, request, { kind: name, slug, phase });
     return reply(request, out, 'MISS');
 }
 
@@ -180,8 +244,14 @@ export default {
         if (url.pathname === '/api/volby' || url.pathname === '/api/prehled') return api(request, env, ctx, url);
         if (url.pathname === '/api/bug') return bug(request, env, url);
         if (url.pathname.startsWith('/hlaseni/')) return screenshot(request, env, url);
-        // Sem chodí jen dotazy, pro které neexistuje soubor v dist/
-        if (APP_ROUTE.test(url.pathname)) return env.ASSETS.fetch(new Request(new URL('/', url), request));
-        return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        // Načtení stránky: přehled / (run_worker_first ve wrangler.jsonc)
+        // a /<slug>, pro který v dist/ soubor není → index.html
+        if (url.pathname === '/' || APP_ROUTE.test(url.pathname)) {
+            track(env, request, { kind: 'page', slug: url.pathname.slice(1), referrer: referrerOf(request, url), demo: url.searchParams.has('demo') });
+            return env.ASSETS.fetch(url.pathname === '/' ? request : new Request(new URL('/', url), request));
+        }
+        // Sem chodí jen dotazy, pro které neexistuje soubor v dist/ (kdyby
+        // run_worker_first chytil víc než /, statika se pořád obslouží)
+        return env.ASSETS.fetch(request);
     },
 };

@@ -21,6 +21,16 @@ není tajný, tokeny jsou v secrets (viz níže).
   `../api/bug.js` → GitHub issue. Screenshoty do KV `HLASENI`, servíruje je
   worker na **`/hlaseni/*`**.
 
+- **Návštěvnost** → Workers Analytics Engine (binding `STATS`, dataset
+  `pirati_vysledky_2026`): worker zapíše anonymní bod za každý dotaz
+  prohlížeče na `/api/volby`, `/api/prehled` a za načtení stránky (`/`
+  a `/<slug>`; kvůli `/` je v `wrangler.jsonc` `run_worker_first: ["/"]`).
+  Ukládá jen typ, zastupitelstvo, fázi voleb, mobil/desktop/robot, doménu
+  refereru a příznak dema — **žádné IP, cookies ani identifikátory**.
+  Prohlížeč se ptá v pevném intervalu (ve skryté záložce vůbec), takže
+  počet dotazů × interval ≈ kolik lidí se dívá. Čte se přes SQL API
+  (token s oprávněním Account Analytics Read), data drží Cloudflare 3 měsíce.
+
 ## Secrets
 
 - `CLOUDFLARE_API_TOKEN` — v GitHubu (Settings → Secrets and variables →
