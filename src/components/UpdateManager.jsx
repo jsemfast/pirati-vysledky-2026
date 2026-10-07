@@ -8,6 +8,7 @@ import { POLLS_CLOSE } from '../councils';
 import { CHANGELOG_OPEN_EVENT } from '../utils/openChangelog';
 import { useUpdateCheck } from '../hooks/useUpdateCheck';
 import ChangelogModal from './ChangelogModal';
+import { guidePending } from '../utils/welcomeGuide';
 
 const SEEN_KEY = 'kv26_seen_version'; // poslední verze, jejíž novinky uživatel viděl
 const RELOADED_KEY = 'kv26_reloaded_for'; // pojistka proti reload smyčce (session)
@@ -29,7 +30,8 @@ export default function UpdateManager() {
     const newVersion = useUpdateCheck();
 
     // Uživatel naposledy viděl starší verzi → rovnou od prvního renderu
-    // otevřít novinky od jeho poslední viděné verze
+    // otevřít novinky od jeho poslední viděné verze. Když má přednost
+    // průvodce první návštěvou (WelcomeGuide), novinky počkají na příště.
     const [modal, setModal] = useState(() => {
         let seen = null;
         try {
@@ -37,7 +39,7 @@ export default function UpdateManager() {
         } catch {
             /* private mode */
         }
-        return seen && seen !== APP_VERSION && !isElectionNight()
+        return seen && seen !== APP_VERSION && !isElectionNight() && !guidePending()
             ? { open: true, afterUpdate: true, since: seen }
             : { open: false, afterUpdate: false, since: null };
     });

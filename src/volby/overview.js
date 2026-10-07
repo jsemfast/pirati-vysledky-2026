@@ -1,21 +1,34 @@
 // Přehled všech pražských zastupitelstev (/, /api/prehled): za každé jen
 // souhrnný soubor vysled/<okres>/<zastup>.json → stav sčítání, hlasy
 // a mandáty stran a hlavně výsledek Pirátů. Okrsky ani kandidáti se
-// neposílají — odpověď má pro všech 58 zastupitelstev pár KB.
+// neposílají (kromě Pirátů na jiných kandidátkách) — odpověď má pro všech
+// 58 zastupitelstev pár KB.
 //
 // Stejně jako feed.js běží na serveru (api/prehled.js, podmíněně přes ETag)
 // i v prohlížeči (záloha, jen zastupitelstva s Piráty) a v demu.
 import { councilByZastup, KV_BASE_URL } from '../councils.js';
-import { allocateSeats } from './compute.js';
+import { allocateSeats, computeOutcome } from './compute.js';
 import { gaussFrom, mulberry32 } from './random.js';
 import { createJsonCache, createLimiter, normalizeResults, pathsFor, phaseOf, sleep } from './feed.js';
 
 export const OVERVIEW_VERSION = 1;
 
+// Piráti na kandidátce jiného uskupení (councils.js pirateCandidates):
+// preferenční hlasy a jestli by měli mandát (oficiálně, nebo náš odhad)
+function pirateCandidatesOf(council, results) {
+    if (!council.pirateCandidates?.length || !results.candidates) return null;
+    const { councilors } = computeOutcome(results, { seats: results.seats });
+    return council.pirateCandidates.map(({ list, n }) => {
+        const c = councilors[list]?.ranked.find((x) => x.n === n);
+        return { list, n, votes: c?.votes ?? null, seat: c ? c.seat : null, order: c?.order ?? null };
+    });
+}
+
 // Souhrn jednoho zastupitelstva z normalizovaného výsledku (normalizeResults).
 // Mandáty: oficiální, když je ČSÚ vyhlásil, jinak náš odhad (allocateSeats).
 // parties: [[č. kandidátky, hlasy, mandáty], …] seřazené podle hlasů
 export function summarizeCouncil(council, results) {
+    const ourCandidates = pirateCandidatesOf(council, results);
     const alloc = allocateSeats(results.parties, { seats: results.seats });
     const official = !!results.official && results.parties.some((p) => p.seats !== null);
     const seatsOf = (p) => (official ? p.seats || 0 : alloc.byId[p.id]?.seats || 0);
@@ -47,6 +60,7 @@ export function summarizeCouncil(council, results) {
                 toThreshold: official ? null : a.toThreshold,
             }
             : null,
+        ...(ourCandidates ? { pirateCandidates: ourCandidates } : {}),
     };
 }
 
@@ -171,6 +185,11 @@ export function createOverviewDemoFeed({ councils, statics, durationMs = 150000,
             wobble: st.lists.map(() => gauss()),
             votes: Math.max(1000, st.votes2022) * (1.03 + 0.05 * gauss()),
             turnout: 42 + 6 * gauss(),
+            // preferenční hlasy jen pro kandidátky s Piráty z jiného uskupení
+            prefs: Object.fromEntries(c.pirateCandidates.map(({ list }) => [list, Array.from(
+                { length: st.lists.find((l) => l.id === list)?.candidates || c.seats },
+                (_, i) => Math.max(0.3, 1 + (i === 0 ? 0.4 : 0) + 0.25 * gauss()),
+            )])),
         };
     });
     const lastEnd = Math.max(...sims.map((s) => s.end), 0);
@@ -192,6 +211,12 @@ export function createOverviewDemoFeed({ councils, statics, durationMs = 150000,
                 candidates: l.candidates || s.council.seats,
                 seats: null,
             }));
+            // hlasy strany = součet hlasů jejích kandidátů
+            const candidates = Object.fromEntries(Object.entries(s.prefs).map(([id, w]) => {
+                const votes = parties.find((p) => p.id === Number(id))?.votes || 0;
+                const wsum = w.reduce((a, b) => a + b, 0);
+                return [id, w.map((x, i) => ({ n: i + 1, votes: Math.round((votes * x) / wsum), elected: null }))];
+            }));
             const official = done === 1 && elapsed > s.end + 8000;
             if (official) {
                 const alloc = allocateSeats(parties, { seats: s.council.seats });
@@ -204,6 +229,7 @@ export function createOverviewDemoFeed({ councils, statics, durationMs = 150000,
                 turnout: { pct: counted ? s.turnout : 0 },
                 official,
                 parties,
+                candidates,
             });
             if (summary.phase === 'pre') summary.phase = 'waiting';
             summaries[s.council.zastup] = summary;

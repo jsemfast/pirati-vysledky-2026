@@ -46,7 +46,8 @@ export function councilSource(council) {
 }
 
 // Přehled všech zastupitelstev. Záloha přímo z volby.gov.cz jen za
-// zastupitelstva s Piráty (22 souborů místo 58) a nejvýš jednou za 2 min.
+// zastupitelstva s Piráty, i na jiných kandidátkách (26 souborů místo 58),
+// a nejvýš jednou za 2 min.
 let overviewFeed = null;
 export const OVERVIEW_SOURCE = {
     key: 'prehled',
@@ -54,7 +55,7 @@ export const OVERVIEW_SOURCE = {
     version: OVERVIEW_VERSION,
     arrivals: false,
     direct: () => (overviewFeed ||= createOverviewFeed({
-        councils: COUNCILS.filter((c) => c.pirates),
+        councils: COUNCILS.filter((c) => c.pirates || c.pirateCandidates.length),
         conditional: false,
         minIntervalMs: 120e3,
         concurrency: 4,

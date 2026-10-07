@@ -43,11 +43,47 @@ function CompactRow({ person, hasVotes, focused, muted = false }) {
                 <div className="text-sm text-neutral-800 truncate">
                     {person.display}
                     {person.jumped && <span className="ml-1 text-[10px] font-bold text-emerald-700">↑</span>}
+                    {/* člen(ka) Pirátů na kandidátce jiného uskupení */}
+                    {person.affiliation === 'Piráti' && <span className="ml-1.5 rounded bg-[#FEC900] px-1 py-px text-[10px] font-bold text-black">Piráti</span>}
                 </div>
             </div>
             <span className="text-[11px] text-neutral-500 tabular-nums">#{person.n}</span>
             {hasVotes && <span className="text-xs tabular-nums text-neutral-600 w-16 text-right">{fmtInt(person.votes)}</span>}
         </div>
+    );
+}
+
+// Piráti na kandidátce jiného uskupení (MČ bez pirátské kandidátky,
+// councils.js pirateCandidates): jestli by měli mandát a kolik mají hlasů
+export function PirateCandidates({ model }) {
+    const { hasVotes, official } = model;
+    const people = (model.council.pirateCandidates || [])
+        .map((pc) => model.councilors[pc.list]?.list.find((c) => c.n === pc.n))
+        .filter(Boolean);
+    if (!people.length) return null;
+    return (
+        <Card className="p-4" accent>
+            <SectionTitle>Piráti na jiné kandidátce</SectionTitle>
+            <div className="text-xs text-neutral-500 mb-3">Vlastní kandidátku tu nemáme — naši lidé kandidují za místní uskupení.</div>
+            <div className="space-y-3">
+                {people.map((person) => (
+                    <div key={cardId(person)} className="flex items-center gap-3">
+                        <Avatar person={person} size={52} ring />
+                        <div className="min-w-0 flex-1">
+                            <div className="text-sm font-bold text-neutral-900 leading-tight truncate">{person.display}</div>
+                            <div className="text-[11px] text-neutral-500 truncate">{person.n}. na kandidátce {partyMeta(person.partyId).short}</div>
+                            {hasVotes && (
+                                <div className="mt-1 flex flex-wrap items-center gap-1">
+                                    <Pill tone={person.seat ? 'yellow' : 'stone'}>{person.seat ? 'má mandát' : 'bez mandátu'}{official ? '' : ' · odhad'}</Pill>
+                                    <Pill>{fmtInt(person.votes)} hl. · {fmtPct(person.pct)}</Pill>
+                                    {person.jumped && <Pill tone="green">↑ preferencemi</Pill>}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </Card>
     );
 }
 
@@ -84,6 +120,8 @@ export default function Councilors({ model }) {
                 </SectionTitle>
                 <Hemicycle model={model} onSelectPerson={setFocus} />
             </Card>
+
+            {!ours && <PirateCandidates model={model} />}
 
             {ours && (
                 <Card className="p-4" accent>

@@ -9,7 +9,7 @@ import { OVERVIEW_SOURCE, useLiveResults } from '../hooks/useLiveResults';
 import { createOverviewDemoFeed } from '../volby/overview';
 import { listLabels } from '../volby/council';
 import { countdown, fmtInt, fmtPct, fmtPp, fmtShortTime, fmtTime, parseCsuTime, plural } from '../volby/format';
-import { RefreshButton, StatusPill } from '../components/ElectionHeader';
+import { AutoRefreshNote, RefreshButton, StatusPill } from '../components/ElectionHeader';
 import { useNow } from '../hooks/useNow';
 import { APP_VERSION } from '../changelog';
 import { openChangelog } from '../utils/openChangelog';
@@ -20,7 +20,9 @@ const DEMO_SECONDS = Number(params.get('demo')) || 150;
 
 const MAGISTRAT = COUNCILS.find((c) => c.magistrat);
 const OURS = COUNCILS.filter((c) => !c.magistrat && c.pirates);
-const OTHERS = COUNCILS.filter((c) => !c.magistrat && !c.pirates);
+// MČ bez pirátské kandidátky, kde Piráti kandidují na kandidátce jiného uskupení
+const ALLIES = COUNCILS.filter((c) => !c.magistrat && !c.pirates && c.pirateCandidates.length);
+const OTHERS = COUNCILS.filter((c) => !c.magistrat && !c.pirates && !c.pirateCandidates.length);
 const EMPTY = '#E5E5E3';
 
 const href = (c) => `/${c.slug}${DEMO ? '?demo' : ''}`;
@@ -169,6 +171,76 @@ function PirateCard({ council, summary, lists, fresh }) {
     );
 }
 
+// Karta MČ, kde Piráti kandidují na kandidátce jiného uskupení: jak si vede
+// kandidátka a jestli by na ní naše kandidátka / náš kandidát měli mandát
+function AllyCard({ council, summary, lists, fresh }) {
+    const live = summary?.votes > 0;
+    return (
+        <a
+            href={href(council)}
+            className={`group block min-w-0 rounded-2xl bg-white border p-4 shadow-sm hover:shadow-md hover:border-black active:bg-neutral-50 transition ${
+                fresh ? 'border-[#FEC900] ring-2 ring-[#FEC900]/60' : 'border-neutral-200'
+            }`}
+        >
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 font-display text-3xl leading-none tracking-wide truncate">{council.name.replace(/^Praha-/, '')}</div>
+                <div className="shrink-0 pt-0.5"><CountBadge summary={summary} /></div>
+            </div>
+            {council.pirateCandidates.map((pc) => {
+                const list = lists?.[pc.list];
+                const row = live ? summary.parties.find(([id]) => id === pc.list) : null;
+                const status = live ? summary.pirateCandidates?.find((x) => x.list === pc.list && x.n === pc.n) : null;
+                const has2022 = list?.pct2022 !== null && list?.pct2022 !== undefined;
+                const pct = row ? (row[1] / summary.votes) * 100 : has2022 ? list.pct2022 : null;
+                const seats = row ? row[2] : list?.seats2022 ?? null;
+                return (
+                    <div key={`${pc.list}-${pc.n}`}>
+                        <div className="mt-2 text-sm font-semibold text-neutral-900 truncate">{pc.name}</div>
+                        <div className="text-[11px] text-neutral-500 truncate" title={list?.short}>
+                            <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ backgroundColor: list?.color || '#6B7280' }} />
+                            {pc.n}. na kandidátce č. {pc.list}{list ? ` · ${list.short}` : ''}
+                        </div>
+
+                        <div className="mt-3 flex items-end justify-between gap-3">
+                            <div className="min-w-0">
+                                <div className={`font-display text-4xl leading-none tabular-nums whitespace-nowrap ${live ? 'text-black' : 'text-neutral-400'}`}>{fmtPct(pct)}</div>
+                                <div className="mt-1 text-[11px] text-neutral-500 truncate">
+                                    {live
+                                        ? `kandidátka · ${seats} ${seatsWord(seats)} z ${council.seats}`
+                                        : has2022
+                                            ? `KV 2022 (${list.baselineLabel}) · ${seats} ${seatsWord(seats)}`
+                                            : 'nová kandidátka, bez srovnání s 2022'}
+                                </div>
+                            </div>
+                            {status?.seat !== null && status?.seat !== undefined ? (
+                                <div className={`shrink-0 rounded-xl px-3 py-1.5 text-right ${status.seat ? 'bg-black text-[#FEC900]' : 'bg-neutral-100 text-neutral-600'}`}>
+                                    <div className="text-sm font-bold leading-tight whitespace-nowrap">{status.seat ? 'má mandát' : 'bez mandátu'}</div>
+                                    <div className={`text-[11px] ${status.seat ? 'text-white/70' : 'text-neutral-500'}`}>{summary.official ? 'oficiálně' : 'odhad'}</div>
+                                </div>
+                            ) : (
+                                <div className="shrink-0 rounded-xl px-3 py-1.5 text-right bg-neutral-100 text-neutral-400">
+                                    <div className="font-display text-4xl leading-none tabular-nums">{pc.n}.</div>
+                                    <div className="text-[11px]">na listině</div>
+                                </div>
+                            )}
+                        </div>
+                        {status?.votes !== null && status?.votes !== undefined && (
+                            <div className="mt-2 text-[11px] text-neutral-500">
+                                Preferenční hlasy: <b className="text-neutral-800">{fmtInt(status.votes)}</b>
+                                {status.order !== null && status.order !== pc.n && <> · {status.order < pc.n ? 'posun' : 'pokles'} z {pc.n}. na {status.order}. místo</>}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+            <div className="mt-3 space-y-1.5">
+                <SeatStrip council={council} summary={summary} lists={lists} />
+                {summary && summary.phase !== 'pre' && !summary.official && <Progress summary={summary} />}
+            </div>
+        </a>
+    );
+}
+
 // Dlaždice MČ, kde Piráti nekandidují: stav sčítání a kdo vede. Dva
 // sloupce i na telefonu — 36 řádků přes celou šířku bylo přes dva metry rolování.
 function OtherRow({ council, summary, lists, fresh }) {
@@ -234,6 +306,14 @@ function Hero({ snapshot, live, lists }) {
                 </h1>
                 <div className="mt-3 text-sm text-white/70">{line}</div>
                 {phase !== 'pre' && p?.total > 0 && <div className="mt-2 max-w-md"><Progress summary={{ counted: p.counted, total: p.total }} dark /></div>}
+                {(live.fetching || live.nextAt) && (
+                    <div className="mt-2 flex items-start gap-1.5 text-xs text-white/60">
+                        <svg className="w-3.5 h-3.5 mt-px shrink-0 text-[#FEC900]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span><AutoRefreshNote live={live} now={now} long /></span>
+                    </div>
+                )}
 
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl bg-white/[0.07] border border-white/10 p-4">
@@ -247,7 +327,7 @@ function Hero({ snapshot, live, lists }) {
                         <div className="mt-1 text-xs text-white/55">
                             {anyLive
                                 ? `Nad 5 % v ${passed} z ${withData.length} MČ s výsledky · 2022: ${seats2022} ${seatsWord(seats2022)}`
-                                : `Kandidujeme v ${OURS.length} z ${OURS.length + OTHERS.length} městských částí`}
+                                : `Kandidujeme v ${OURS.length} z ${OURS.length + ALLIES.length + OTHERS.length} MČ, v dalších ${ALLIES.length} na jiných kandidátkách`}
                         </div>
                     </div>
                     <a href={href(MAGISTRAT)} className="group rounded-2xl bg-white/[0.07] border border-white/10 hover:border-[#FEC900] active:bg-white/[0.12] p-4 transition">
@@ -384,6 +464,18 @@ export default function Landing() {
                     Procenta a mandáty jsou do vyhlášení ČSÚ odhad z průběžně sečtených okrsků. Srovnání s 2022 = výsledek
                     předchůdců kandidátky v celé MČ{anyLive ? '; změnu v p. b. ukazujeme až po sečtení všech okrsků' : ''}.
                 </p>
+
+                <h2 className="mt-8 font-display text-3xl md:text-4xl tracking-wide leading-none">
+                    Piráti na jiných kandidátkách <span className="text-neutral-400">{ALLIES.length}</span>
+                </h2>
+                <p className="mt-1 text-xs text-neutral-500">
+                    Vlastní kandidátku tu nemáme — naši lidé kandidují na kandidátkách místních uskupení. Mandáty jsou do vyhlášení ČSÚ odhad.
+                </p>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {ALLIES.map((c) => (
+                        <AllyCard key={c.slug} council={c} summary={s[c.zastup]} lists={lists[c.zastup]} fresh={fresh.has(String(c.zastup))} />
+                    ))}
+                </div>
 
                 <h2 className="mt-8 font-display text-3xl tracking-wide leading-none">
                     Ostatní městské části <span className="text-neutral-400">{OTHERS.length}</span>

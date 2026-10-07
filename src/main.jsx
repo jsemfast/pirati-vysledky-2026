@@ -4,6 +4,7 @@ import './index.css'
 import { councilBySlug } from './councils.js'
 import UpdateManager from './components/UpdateManager.jsx'
 import BugReportWidget from './components/BugReportWidget.jsx'
+import WelcomeGuide from './components/WelcomeGuide.jsx'
 
 // Každá stránka (a mapa uvnitř stránky zastupitelstva) je zvlášť — přehled
 // tak na telefonu nestahuje MapLibre a Leaflet, které nepoužívá
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')).render(
       {council ? <CouncilApp council={council} /> : <Landing />}
     </Suspense>
     <UpdateManager />
+    <WelcomeGuide />
     <BugReportWidget raised={!!council} />
   </StrictMode>,
 )

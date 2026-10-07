@@ -10,7 +10,7 @@ import { APP_VERSION } from '../changelog';
 import { openChangelog } from '../utils/openChangelog';
 import { COUNCILS, POLLS_CLOSE } from '../councils';
 import { activeCouncil } from '../volby/council';
-import { countdown, fmtPct, fmtShortTime, fmtTime, parseCsuTime } from '../volby/format';
+import { countdown, fmtPct, fmtTime, parseCsuTime } from '../volby/format';
 import { PrecinctStrip } from './Precincts';
 
 export function StatusPill({ phase, demo, stale }) {
@@ -29,13 +29,26 @@ export function StatusPill({ phase, demo, stale }) {
 }
 
 const fmtWait = (sec) => (sec >= 90 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec} s`);
+// Sekundy do další automatické kontroly (null = pauza ve skryté záložce)
+const nextInOf = (live, now) => (live.nextAt ? Math.max(0, Math.ceil((live.nextAt - now) / 1000)) : null);
+
+// Za jak dlouho se stránka sama obnoví — vedle odpočtu, ať ji nikdo
+// neobnovuje ručně (rychleji to nebude, jen to zatěžuje server)
+export function AutoRefreshNote({ live, now, long = false }) {
+    if (live.fetching) return long ? 'Načítám nová data…' : 'načítám…';
+    const nextIn = nextInOf(live, now);
+    if (nextIn === null) return null;
+    return long
+        ? <>Stránka se obnoví sama za <b className="text-white tabular-nums">{fmtWait(nextIn)}</b> — není potřeba ji načítat znovu</>
+        : `obnoví se samo za ${fmtWait(nextIn)}`;
+}
 
 // Ruční obnovení. Do konce odpočtu do další kontroly je ztlumené a kliknutí
 // jen řekne, kdy to půjde — dřívější dotaz by zbytečně zatěžoval (data se
 // stejně obnovují po minutě).
 export function RefreshButton({ live, now, demo = false, showLabel = 'hidden sm:inline' }) {
     const [hint, setHint] = useState(false);
-    const nextIn = live.nextAt ? Math.max(0, Math.ceil((live.nextAt - now) / 1000)) : null;
+    const nextIn = nextInOf(live, now);
     const blocked = !demo && nextIn !== null && nextIn > 0;
     const onClick = () => {
         if (live.refresh()) return;
@@ -48,16 +61,18 @@ export function RefreshButton({ live, now, demo = false, showLabel = 'hidden sm:
             className={`relative flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-11 min-w-11 text-xs font-semibold transition-colors ${
                 blocked ? 'text-white/45 cursor-not-allowed' : 'text-white/80 hover:text-white hover:bg-white/10'
             }`}
-            aria-label={blocked ? `Obnovit půjde za ${fmtWait(nextIn)}` : 'Obnovit výsledky'}
-            title={blocked ? `Další kontrola za ${fmtWait(nextIn)}` : 'Obnovit výsledky'}
+            aria-label={blocked ? `Stránka se obnoví sama za ${fmtWait(nextIn)}` : 'Obnovit výsledky'}
+            title={blocked ? `Stránka se obnoví sama za ${fmtWait(nextIn)}` : 'Obnovit výsledky'}
         >
             <svg className={`w-4 h-4 ${live.fetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             <span className={`${showLabel} tabular-nums`}>{nextIn === null ? 'pauza' : fmtWait(nextIn)}</span>
             {hint && (
-                <span className="absolute top-full right-0 mt-1 z-10 whitespace-nowrap rounded bg-white text-neutral-700 text-[11px] font-normal px-2 py-1 shadow">
-                    {nextIn ? <>Obnovit půjde za <b>{fmtWait(nextIn)}</b> — dřív nová data stejně nebudou</> : 'Zkus to za chvilku'}
+                <span className="absolute top-full right-0 mt-1 z-10 w-60 rounded bg-white text-neutral-700 text-[11px] text-left font-normal leading-snug px-2 py-1.5 shadow">
+                    {nextIn
+                        ? <>Stránka se obnoví sama za <b>{fmtWait(nextIn)}</b>. Dřív nová data stejně nebudou — ruční obnovení jen zatěžuje server.</>
+                        : 'Zkus to za chvilku'}
                 </span>
             )}
         </button>
@@ -133,9 +148,29 @@ function CouncilMenu({ demo }) {
                                     </a>
                                 );
                             })}
+                            <div className="font-condensed px-3 pt-4 pb-2 text-xs font-bold uppercase tracking-wider text-neutral-400">Piráti na jiných kandidátkách</div>
+                            {COUNCILS.filter((c) => !c.pirates && c.pirateCandidates.length).map((c) => {
+                                const isCurrent = c.slug === current?.slug;
+                                return (
+                                    <a
+                                        key={c.slug}
+                                        href={`/${c.slug}${demo ? '?demo' : ''}`}
+                                        aria-current={isCurrent ? 'page' : undefined}
+                                        className={`flex items-center justify-between rounded-xl px-3 py-2 ${isCurrent ? 'bg-black text-white' : 'hover:bg-neutral-100 active:bg-neutral-100 text-neutral-800'}`}
+                                    >
+                                        <span className="min-w-0">
+                                            <span className="block font-display text-xl leading-none tracking-wide">{c.name}</span>
+                                            <span className={`block text-[11px] truncate ${isCurrent ? 'text-white/60' : 'text-neutral-500'}`}>
+                                                {c.pirateCandidates.map((pc) => `${pc.name} (č. ${pc.list})`).join(', ')}
+                                            </span>
+                                        </span>
+                                        {isCurrent && <span className="text-[#FEC900]">●</span>}
+                                    </a>
+                                );
+                            })}
                             <div className="font-condensed px-3 pt-4 pb-2 text-xs font-bold uppercase tracking-wider text-neutral-400">Ostatní městské části</div>
                             <div className="grid grid-cols-2 gap-1">
-                                {COUNCILS.filter((c) => !c.pirates).map((c) => (
+                                {COUNCILS.filter((c) => !c.pirates && !c.pirateCandidates.length).map((c) => (
                                     <a
                                         key={c.slug}
                                         href={`/${c.slug}${demo ? '?demo' : ''}`}
@@ -205,11 +240,20 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
     const p = snapshot?.precincts;
     const dataTime = demo ? snapshot?.fetchedAt : parseCsuTime(snapshot?.generated);
 
+    // shortLine = telefon: vedle se musí vejít, kdy se stránka sama obnoví
     let line;
+    let shortLine;
     if (!snapshot) line = live.status === 'error' ? 'Výsledky se nepodařilo načíst — zkusím to znovu.' : 'Načítám výsledky…';
-    else if (phase === 'pre') line = `Místnosti se zavírají v sobotu 10. 10. ve 14:00 · za ${countdown(POLLS_CLOSE - now)}`;
-    else if (phase === 'waiting') line = 'Volby skončily — čekáme na první okrskové komise';
-    else line = `Sečteno ${p.counted} z ${p.total} okrsků (${fmtPct(p.pct)}) · účast ${fmtPct(snapshot.turnout.pct)}`;
+    else if (phase === 'pre') {
+        line = `Místnosti se zavírají v sobotu 10. 10. ve 14:00 · za ${countdown(POLLS_CLOSE - now)}`;
+        shortLine = `Konec voleb v so 14:00 · za ${countdown(POLLS_CLOSE - now)}`;
+    } else if (phase === 'waiting') {
+        line = 'Volby skončily — čekáme na první okrskové komise';
+        shortLine = 'Čekáme na první okrsky';
+    } else {
+        line = `Sečteno ${p.counted} z ${p.total} okrsků (${fmtPct(p.pct)}) · účast ${fmtPct(snapshot.turnout.pct)}`;
+        shortLine = `${p.counted}/${p.total} okrsků (${fmtPct(p.pct)}) · účast ${fmtPct(snapshot.turnout.pct)}`;
+    }
 
     return (
         <header className="bg-black text-white shrink-0 z-[1200] relative">
@@ -239,17 +283,27 @@ export default function ElectionHeader({ live, snapshot, demo, geoJson, selected
                             <span className="hidden sm:inline">{council?.name} <span className="text-[#FEC900]">·</span> výsledky</span>
                         </h1>
                     </div>
-                    <RefreshButton live={live} now={now} demo={demo} />
+                    {/* odpočet je ve druhém řádku („obnoví se samo za …“) */}
+                    <RefreshButton live={live} now={now} demo={demo} showLabel="hidden" />
                     <CouncilMenu demo={demo} />
                 </div>
 
                 <div className="mt-2 short:mt-1 flex items-center justify-between gap-3 text-[11px] text-white/70">
-                    <span className="truncate">{line}</span>
-                    <span className="shrink-0 tabular-nums text-white/45 sm:hidden">{live.lastSuccess ? fmtShortTime(live.lastSuccess) : ''}</span>
+                    <span className="truncate">
+                        <span className="sm:hidden">{shortLine || line}</span>
+                        <span className="hidden sm:inline">{line}</span>
+                    </span>
+                    <span
+                        className="shrink-0 tabular-nums text-white/60 sm:hidden"
+                        title={live.lastSuccess ? `Poslední kontrola ${fmtTime(live.lastSuccess)}` : undefined}
+                    >
+                        <AutoRefreshNote live={live} now={now} />
+                    </span>
                     <span className="hidden sm:inline shrink-0 tabular-nums text-white/45" title={dataTime ? `Data ČSÚ vygenerována ${fmtTime(dataTime)}` : undefined}>
                         {phase !== 'pre' && dataTime ? `ČSÚ ${fmtTime(dataTime)} · ` : ''}
                         {live.lastSuccess ? `kontrola ${fmtTime(live.lastSuccess)}` : ''}
                         {live.source === 'direct' && ' · přímo z ČSÚ'}
+                        {(live.fetching || live.nextAt) && <span className="text-white/70"> · <AutoRefreshNote live={live} now={now} /></span>}
                     </span>
                 </div>
                 {snapshot && phase !== 'pre' && geoJson && (

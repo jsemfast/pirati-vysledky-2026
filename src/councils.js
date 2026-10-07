@@ -102,8 +102,17 @@ const MAGISTRAT = 554782;
  *               mají přednost před fotkami z programydovoleb.cz
  * map         – mapa okrsků (u Magistrátu zatím vypnutá, viz docs/MAGISTRAT.md)
  * precinctFiles – stahovat okrskové výsledky (1 soubor = 1 okrsek)
+ * pirateCandidates – členové Pirátů na kandidátce jiného uskupení v MČ bez
+ *               pirátské kandidátky: [{ list, n, name }] = číslo kandidátky,
+ *               pořadí na listině, jméno. Přehled tyhle MČ ukazuje nad ostatními.
  */
 const DETAIL = {
+    // Členky Pirátů na kandidátkách místních uskupení (příslušnost „Piráti"
+    // v jmenném seznamu ČSÚ, navržené jako nezávislé nebo za PRAHA SOBĚ)
+    'praha-dolni-mecholupy': { pirateCandidates: [{ list: 3, n: 6, name: 'Maki Němečková' }] },
+    'praha-klanovice': { pirateCandidates: [{ list: 2, n: 4, name: 'Zuzana Vyskočilová' }] },
+    'praha-kunratice': { pirateCandidates: [{ list: 4, n: 6, name: 'Veronika Nürnbergerová' }] },
+    'praha-suchdol': { pirateCandidates: [{ list: 2, n: 6, name: 'Gabriela Lněničková' }] },
     'praha-3': {
         coalition: {
             lists: [5, 1, 7],
@@ -227,6 +236,7 @@ const DETAIL = {
  * seats       – počet mandátů 2026
  * precincts   – počet okrsků 2026
  * pirates     – číslo pirátské kandidátky (null = Piráti nekandidují)
+ * pirateCandidates – Piráti na jiných kandidátkách, viz DETAIL
  * coalition   – viz DETAIL (null = neznámá / nezadaná)
  * magistrat   – Zastupitelstvo hl. m. Prahy (ne městská část)
  */
@@ -239,6 +249,7 @@ export const COUNCILS = PRAHA.map(([slug, zastup, name, seats, precincts, pirate
     seats,
     precincts,
     pirates,
+    pirateCandidates: [],
     magistrat: zastup === MAGISTRAT,
     coalition: null,
     lists: {},
