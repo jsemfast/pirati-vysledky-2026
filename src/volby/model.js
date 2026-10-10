@@ -4,7 +4,7 @@
 import { computeOutcome, minimalCoalitions, sumSeats, baselineShare } from './compute.js';
 import { activeCouncil, partyMeta } from './council.js';
 import { candidateName } from './format.js';
-import { POLLS_CLOSE } from '../councils.js';
+import { POLLS_CLOSE, coalitionName } from '../councils.js';
 
 export function buildModel(snapshot, { kandidati, results2022 }) {
     if (!snapshot) return null;
@@ -104,6 +104,7 @@ export function buildModel(snapshot, { kandidati, results2022 }) {
         seatsById: outcome.seatsById,
         councilors,
         coalition: {
+            name: coalitionName(council),
             members: coalitionLists,
             label: council.coalition?.label || '',
             seats: sumSeats(outcome.seatsById, coalitionLists),

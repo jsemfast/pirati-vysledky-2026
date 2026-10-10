@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { activeCouncil, colorOnDark, partyMeta } from '../volby/council';
 import { baselineShare, precinctShare, precinctWinner } from '../volby/compute';
-import { MAP_MODES, getMapMode, mapModesFor } from '../volby/mapModes';
+import { getMapMode, mapModesFor } from '../volby/mapModes';
+import { coalitionName } from '../councils';
 import { textOn, UNCOUNTED_FILL } from '../volby/colors';
 import { fmtInt, fmtPct, fmtShortTime } from '../volby/format';
 import { Card, Delta, SectionTitle } from './ui';
@@ -103,7 +104,7 @@ export function MapControls({ modeId, onMode, partyId, onParty, parties, compact
             )}
             {!compact && (
                 <div className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
-                    {MAP_MODES.find((m) => m.id === modeId)?.long}
+                    {mapModesFor(activeCouncil()).find((m) => m.id === modeId)?.long}
                 </div>
             )}
             {mode.legend && compact && (
@@ -212,7 +213,7 @@ export function PrecinctDetail({ id, snapshot, results2022, arrivals, onClose })
                     <div className={`mt-3 pt-2 border-t border-neutral-100 grid ${activeCouncil().coalition ? 'grid-cols-3' : 'grid-cols-2'} gap-2 text-center`}>
                         {activeCouncil().coalition && (
                             <div>
-                                <div className="text-[11px] text-neutral-500">Současná koalice</div>
+                                <div className="text-[11px] text-neutral-500">{coalitionName(activeCouncil())}</div>
                                 <div className="text-sm font-bold tabular-nums">{fmtPct(coalition)}</div>
                             </div>
                         )}

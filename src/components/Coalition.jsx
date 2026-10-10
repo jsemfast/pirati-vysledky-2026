@@ -1,4 +1,4 @@
-// Koalice: současná koalice (podle src/councils.js), skládačka vlastní
+// Koalice: současná (nebo ideální) koalice podle src/councils.js, skládačka vlastní
 // koalice a seznam všech minimálních většinových kombinací.
 import React, { useMemo, useRef, useState } from 'react';
 import { activeCouncil, partyMeta } from '../volby/council';
@@ -106,7 +106,7 @@ export function CoalitionHero({ model }) {
             {council.coalition && (
                 <div className="p-4">
                     <div className="flex items-center justify-between gap-2">
-                        <div className="font-condensed text-xs font-bold uppercase tracking-wider text-neutral-500">Současná koalice</div>
+                        <div className="font-condensed text-xs font-bold uppercase tracking-wider text-neutral-500">{coalition.name}</div>
                         {hasVotes ? <MajorityBadge seats={coalition.seats} /> : <span className="text-[11px] text-neutral-500">čeká na výsledky</span>}
                     </div>
                     <div className="mt-1 flex items-baseline gap-2">
@@ -272,7 +272,7 @@ export default function CoalitionPanel({ model }) {
                                                 </PartyChip>
                                             ))}
                                     </div>
-                                    {isCurrent(c.members) && <span className="text-[10px] font-bold text-[#000000] bg-[#FEC900] rounded-full px-2 py-0.5 shrink-0">současná</span>}
+                                    {isCurrent(c.members) && <span className="text-[10px] font-bold text-[#000000] bg-[#FEC900] rounded-full px-2 py-0.5 shrink-0">{coalition.name.split(' ')[0].toLowerCase()}</span>}
                                     <span className="text-sm font-bold tabular-nums w-14 text-right shrink-0">
                                         {c.seats} <span className="text-[11px] font-semibold text-neutral-500">+{c.seats - coalition.majority}</span>
                                     </span>

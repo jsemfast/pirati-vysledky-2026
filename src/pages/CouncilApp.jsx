@@ -408,7 +408,7 @@ export default function CouncilApp({ council }) {
                     Rozdělení mandátů
                 </SectionTitle>
                 {council.coalition ? (
-                    <Hemicycle model={model} highlight={model.coalition.members} centerLabel="současná koalice" />
+                    <Hemicycle model={model} highlight={model.coalition.members} centerLabel={model.coalition.name.toLowerCase()} />
                 ) : (
                     <Hemicycle model={model} highlight={council.pirates ? [council.pirates] : null} centerLabel={council.pirates ? partyMeta(council.pirates).tiny : undefined} />
                 )}
