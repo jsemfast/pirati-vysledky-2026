@@ -8,6 +8,15 @@
 
 export const CHANGELOG = [
     {
+        version: '1.5.2',
+        date: '2026-10-10',
+        title: 'Rychlejší výsledky',
+        items: [
+            { type: 'improved', text: 'Nová data z ČSÚ se ukážou do zhruba 20 vteřin po zveřejnění — stránka se během sčítání obnovuje každých 15 vteřin místo jednou za minutu' },
+            { type: 'fixed', text: 'Prohlížeč občas ukázal o minutu starší data ze své paměti' },
+        ],
+    },
+    {
         version: '1.5.1',
         date: '2026-10-07',
         title: 'Anonymní měření návštěvnosti',

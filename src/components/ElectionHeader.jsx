@@ -45,7 +45,7 @@ export function AutoRefreshNote({ live, now, long = false }) {
 
 // Ruční obnovení. Do konce odpočtu do další kontroly je ztlumené a kliknutí
 // jen řekne, kdy to půjde — dřívější dotaz by zbytečně zatěžoval (data se
-// stejně obnovují po minutě).
+// při sčítání stejně obnovují každých 15 s).
 export function RefreshButton({ live, now, demo = false, showLabel = 'hidden sm:inline' }) {
     const [hint, setHint] = useState(false);
     const nextIn = nextInOf(live, now);
