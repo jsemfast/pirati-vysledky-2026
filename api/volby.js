@@ -3,8 +3,8 @@
 //
 // Funkce je tenká sdílená vrstva nad volby.gov.cz: stahuje pár souborů
 // (podmíněně přes ETag, okrsky jen nové) a odpověď vrací s Cache-Control
-// s-maxage, takže prohlížeče obslouží CDN Vercelu a funkce se spustí zhruba
-// 2× za minutu za každé zastupitelstvo — bez ohledu na počet diváků. Stav
+// s-maxage, takže prohlížeče obslouží CDN Vercelu a funkce se spustí nejvýš
+// jednou za 5 s za každé zastupitelstvo — bez ohledu na počet diváků. Stav
 // (ETagy, okrsky) drží v paměti instance; studený start jen jednou dotáhne
 // už sečtené okrsky (na ty se čeká max. 3 s, zbytek doběhne na pozadí).
 import { createKvFeed } from '../src/volby/feed.js';
@@ -18,7 +18,7 @@ function feedFor(council) {
         feeds.set(council.zastup, createKvFeed({
             council,
             conditional: true,
-            minIntervalMs: 20e3,
+            minIntervalMs: 10e3,
             headers: { 'User-Agent': USER_AGENT },
         }));
     }

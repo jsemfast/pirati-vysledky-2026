@@ -9,7 +9,8 @@ export const USER_AGENT = 'pirati-vysledky-2026/1.0 (zive vysledky KV 2026)';
 export function cdnMaxAge(phase) {
     if (phase === 'pre') return Math.max(10, Math.min(300, Math.round((POLLS_CLOSE - Date.now()) / 1000)));
     if (phase === 'final') return 600;
-    return 30;
+    // při sčítání krátce — nová data z ČSÚ mají být u diváků co nejdřív
+    return 5;
 }
 
 export function send(res, status, body, cacheControl) {

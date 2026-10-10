@@ -4,8 +4,9 @@
 //    záložně přímo volby.gov.cz (CORS povolen); proxy se zkusí za 3 minuty
 //    — jednorázové zaškobrtnutí (studený start) diváky na ČSÚ nepošle,
 //  - interval podle fáze: před 14:00 jednou za 10 min (probuzení přesně na
-//    uzavření místností), při sčítání 60 s (ČSÚ data stejně cachuje 60 s),
-//    po vyhlášení mandátů 15 min; ±15 % jitter, ať se klienti nesešikují,
+//    uzavření místností), při sčítání 15 s (ČSÚ data mění jednou za minutu —
+//    kratší interval je ukáže co nejdřív po zveřejnění), po vyhlášení
+//    mandátů 15 min; ±15 % jitter, ať se klienti nesešikují,
 //  - skrytý panel/tab = žádné dotazy; po návratu dotaz jen když jsou data stará,
 //  - chyby = exponenciální backoff 1 → 2 → 4 → 8 → 10 min,
 //  - obnovit dřív, než vyprší odpočet do další kontroly, nejde — ani
@@ -20,7 +21,7 @@ import { createKvFeed, phaseOf, SNAPSHOT_VERSION } from '../volby/feed.js';
 import { createOverviewFeed, OVERVIEW_VERSION } from '../volby/overview.js';
 import { COUNCILS, POLLS_CLOSE } from '../councils.js';
 
-const INTERVAL = { pre: 10 * 60e3, waiting: 60e3, counting: 60e3, final: 15 * 60e3 };
+const INTERVAL = { pre: 10 * 60e3, waiting: 15e3, counting: 15e3, final: 15 * 60e3 };
 const DEMO_INTERVAL = 4000;
 const MANUAL_GAP_MS = 15e3;
 const PROXY_RETRY_MS = 3 * 60e3;
@@ -90,7 +91,10 @@ function viewHeader(seconds, visit) {
 
 async function fetchProxy(source, view) {
     const signal = typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(PROXY_TIMEOUT_MS) : undefined;
-    const res = await fetch(source.url, { headers: { Accept: 'application/json', 'X-Kv26-View': view }, signal });
+    // no-cache: odpověď má stale-while-revalidate (pro CDN) a prohlížeč by
+    // jinak vrátil předchozí odpověď ze své cache a čerstvou stáhl jen na
+    // pozadí — data by byla o jedno kolo pozadu
+    const res = await fetch(source.url, { cache: 'no-cache', headers: { Accept: 'application/json', 'X-Kv26-View': view }, signal });
     const type = res.headers.get('content-type') || '';
     // Vite dev bez API / výpadek funkce vrátí HTML nebo chybu → záloha
     if (!type.includes('application/json')) throw new Error('proxy-unavailable');

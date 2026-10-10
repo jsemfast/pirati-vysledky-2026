@@ -58,8 +58,9 @@ Konfigurace); jinde se karta koalice a režim mapy „Koalice" neukazují.
   preferenční hlasy a odhad mandátu naší kandidátky), a ostatní MČ s tím,
   kdo vede. Čerstvě změněné MČ krátce zablikají. Demo `/?demo`.
 - **Živé výsledky** — sečtené okrsky, účast, hlasy a procenta stran, automatické
-  obnovení každou minutu (ČSÚ data stejně cachuje 60 s), odpočet do další
-  kontroly („obnoví se samo za 0:45"). Obnovit ručně (tlačítkem i reloadem
+  obnovení při sčítání každých 15 s (ČSÚ data mění jednou za minutu — nová
+  se tak ukážou do ~20 s po zveřejnění), odpočet do další kontroly
+  („obnoví se samo za 12 s"). Obnovit ručně (tlačítkem i reloadem
   stránky) jde až po jeho vypršení. Při první návštěvě krátký průvodce
   ([`WelcomeGuide`](src/components/WelcomeGuide.jsx), jednou na prohlížeč):
   stránka se obnovuje sama, ruční obnovení nic nezrychlí.
@@ -155,8 +156,8 @@ a z každého pošle stav sčítání, hlasy a mandáty stran (oficiální, nebo
 odhad) a výsledek Pirátů — celá odpověď má ~15 KB (~3–4 KB komprimovaně).
 
 ```
-prohlížeče ──(1×/min)──▶ CDN Vercelu ──(~2×/min/zastupitelstvo)──▶ api/volby.js ──(ETag, 304)──▶ volby.gov.cz
-     │                        └─────────(~2×/min)──────────────────▶ api/prehled.js ─(58 souborů)─┘   ▲
+prohlížeče ──(4×/min)──▶ CDN ──(≤ 1× za 5 s/zastupitelstvo)──▶ api/volby.js ──(ETag, 304, ≤ 1× za 10 s)──▶ volby.gov.cz
+     │                    └─────────(≤ 1× za 5 s)────────────▶ api/prehled.js ─(58 souborů)────────┘   ▲
      └──────────────── záloha, když naše API 2× po sobě selže (CORS povolen) ───────────────────────┘
 ```
 
@@ -166,12 +167,15 @@ Záloha přehledu přímo z prohlížeče čte jen 26 zastupitelstev s Piráty
 ### Šetrnost ke kapacitě
 
 - **Jedna sdílená odpověď pro všechny.** `api/volby.js?z=<kód>` vrací snapshot
-  s `Cache-Control: s-maxage=30, stale-while-revalidate=60, stale-if-error=900`.
-  Diváky obslouží CDN; funkce běží zhruba 2× za minutu za zastupitelstvo bez
-  ohledu na počet lidí. Před 14:00 s-maxage až 5 min, po vyhlášení 10 min.
+  s `Cache-Control: s-maxage=5, stale-while-revalidate=10, stale-if-error=900`.
+  Diváky obslouží CDN; funkce běží nejvýš jednou za 5 s za zastupitelstvo
+  bez ohledu na počet lidí a soubory ČSÚ kontroluje nejvýš jednou za 10 s.
+  Před 14:00 s-maxage až 5 min, po vyhlášení 10 min. Prohlížeč se ptá
+  s `cache: 'no-cache'` — se `stale-while-revalidate` by jinak vracel
+  předchozí odpověď ze své cache a data by byla o kolo pozadu.
 - **Klient podle fáze** ([`useLiveResults`](src/hooks/useLiveResults.js)):
   před 14:00 jednou za 10 min (a probudí se přesně na uzavření místností),
-  při sčítání 60 s ± 15 % jitter, po vyhlášení 15 min. Ve skryté záložce
+  při sčítání 15 s ± 15 % jitter, po vyhlášení 15 min. Ve skryté záložce
   nic, při chybách backoff až na 10 min. **Ruční obnovení až po vypršení
   odpočtu** do další kontroly: tlačítko je do té doby ztlumené a po kliknutí
   jen řekne, za kolik to půjde. Reload stránky před koncem odpočtu nic
@@ -195,15 +199,17 @@ Praha 3 **9 KB**, Praha 6 **15 KB**, Praha 11 **10 KB**, Magistrát **25 KB**
 
 | Scénář: 6 h sledování | CDN requesty | Přenos | Funkce | Zdroj volby.gov.cz |
 |---|---|---|---|---|
-| 5 000 diváků celkem | ~1,8 mil. | ~35 GB | ≤ 2 spuštění/min na sledované zastupitelstvo + přehled, < 30 min CPU | ≤ ~350 podmíněných dotazů/min (většinou 304) + ~1 100 okrskových souborů za noc |
-| 20 000 diváků celkem | ~7 mil. | ~130 GB | stejně | stejně |
+| 5 000 diváků celkem | ~7 mil. | ~140 GB | ≤ 12 spuštění/min na sledované zastupitelstvo + přehled | ≤ ~700 podmíněných dotazů/min (většinou 304) + ~1 100 okrskových souborů za noc |
+| 20 000 diváků celkem | ~28 mil. | ~520 GB | stejně | stejně |
 
-Na **Vercel Pro** (10 mil. requestů a 1 TB přenosu v ceně) je to ve všech
-scénářích 0 Kč navíc. Na Hobby (zhruba 1 mil. requestů / 100 GB měsíčně)
-by velký scénář narazil — projekt proto patří do placeného týmu. Počet
+Polling při sčítání je od verze 1.5.2 každých 15 s (dřív 60 s), proto
+4× víc requestů a přenosu. Produkce na **Cloudflare Workers Paid** má
+v ceně 10 mil. requestů měsíčně, nad ně $0,30 za milion (velký scénář
+≈ $6). Na **Vercel Pro** (10 mil. requestů a 1 TB přenosu v ceně) by velký
+scénář requesty přetáhl; na Hobby by narazil už malý. Počet
 spuštění funkce a zátěž volby.gov.cz na počtu diváků **nezávisí** — jen na
 tom, kolik zastupitelstev má aspoň jednoho diváka (horní mez = všech 58
-+ přehled, který sám čte 58 souborů ~2× za minutu).
++ přehled, který sám čte 58 souborů nejvýš jednou za 10 s, 12 souběžně).
 
 ## Data
 
