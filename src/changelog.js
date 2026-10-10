@@ -8,6 +8,14 @@
 
 export const CHANGELOG = [
     {
+        version: '1.5.4',
+        date: '2026-10-10',
+        title: 'Ideální koalice na Magistrátu',
+        items: [
+            { type: 'improved', text: 'U Magistrátu ukazujeme místo současné koalice ideální — Piráti, STAN a PRAHA SOBĚ — a jestli by měla většinu' },
+        ],
+    },
+    {
         version: '1.5.3',
         date: '2026-10-10',
         title: 'Hlasy kandidátů podle pravidel komunálních voleb',

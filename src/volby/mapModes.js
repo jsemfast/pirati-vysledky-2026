@@ -3,6 +3,7 @@ import { activeCouncil, partyMeta } from './council.js';
 import { precinctShare, precinctWinner, baselineShare } from './compute.js';
 import { sequentialScale, divergingScale, PIRATE_RAMP } from './colors.js';
 import { fmtPct, fmtPp } from './format.js';
+import { coalitionName } from '../councils.js';
 
 export const MAP_MODES = [
     { id: 'ours', label: 'Piráti', long: 'Piráti — podíl hlasů' },
@@ -19,7 +20,8 @@ const SHARE_BREAKS = [5, 10, 15, 20, 25, 30, 35];
 // ani „vs 2022", bez zadané současné koalice není „Koalice"
 export function mapModesFor(council) {
     return MAP_MODES.filter((m) => (m.id === 'ours' || m.id === 'swing' ? !!council?.pirates
-        : m.id === 'coalition' ? !!council?.coalition : true));
+        : m.id === 'coalition' ? !!council?.coalition : true))
+        .map((m) => (m.id === 'coalition' ? { ...m, long: `${coalitionName(council)} — podíl hlasů` } : m));
 }
 
 export function getMapMode(modeId, { partyId, results2022 } = {}) {

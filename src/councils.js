@@ -93,7 +93,8 @@ const MAGISTRAT = 554782;
  *
  * title       – plný název zastupitelstva (výchozí „Zastupitelstvo městské části …")
  * coalition   – současná koalice (2022–2026) přepočtená na čísla kandidátek
- *               2026; seats2022 = kolik měla mandátů po volbách 2022
+ *               2026; seats2022 = kolik měla mandátů po volbách 2022;
+ *               name = nadpis místo „Současná koalice" (např. ideální koalice)
  * lists       – zkrácené názvy kandidátek (short = seznamy, tiny = mapa/čipy),
  *               volitelně barva; co tu chybí, vezme se z registru ČSÚ
  *               a programydovoleb.cz. Pirátské kandidátce short nepřepisovat —
@@ -204,11 +205,13 @@ const DETAIL = {
         // a bez okrskových souborů (1 120 okrsků), viz docs/MAGISTRAT.md
         title: 'Zastupitelstvo hlavního města Prahy',
         coalition: {
-            // 2023–2026: SPOLU (ODS, TOP 09, KDU-ČSL), Piráti, STAN.
-            // KDU-ČSL letos na Magistrátu s ODS + TOP 09 nekandiduje.
-            lists: [12, 7, 9],
-            label: 'ODS + TOP 09, Piráti a STAN',
-            seats2022: 37,
+            // Místo současné koalice 2023–2026 (SPOLU, Piráti, STAN — 37/65
+            // v roce 2022) ukazujeme ideální: Piráti, STAN a PRAHA SOBĚ.
+            // seats2022 = 13 + 5 + 11 mandátů těchhle stran v roce 2022.
+            name: 'Ideální koalice',
+            lists: [7, 9, 5],
+            label: 'Piráti, STAN a PRAHA SOBĚ',
+            seats2022: 29,
             seatsTotal2022: 65,
         },
         lists: {
@@ -262,3 +265,5 @@ export const COUNCILS = PRAHA.map(([slug, zastup, name, seats, precincts, pirate
 export const councilBySlug = (slug) => COUNCILS.find((c) => c.slug === slug) || null;
 export const councilByZastup = (zastup) => COUNCILS.find((c) => c.zastup === Number(zastup)) || null;
 export const majorityOf = (seats) => Math.floor(seats / 2) + 1;
+// Nadpis koalice z DETAIL („Současná koalice", na Magistrátu „Ideální koalice")
+export const coalitionName = (council) => council?.coalition?.name || 'Současná koalice';
