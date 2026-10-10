@@ -8,6 +8,17 @@
 
 export const CHANGELOG = [
     {
+        version: '1.5.3',
+        date: '2026-10-10',
+        title: 'Hlasy kandidátů podle pravidel komunálních voleb',
+        items: [
+            { type: 'fixed', text: 'Celé pořadí kandidátky odpovídá tomu, jak se mandáty skutečně rozdělují: napřed kandidáti s aspoň o 10 % víc hlasy, než je průměr na kandidáta, pak ostatní podle listiny — dřív to bylo jen seřazení podle hlasů. Čára ukazuje, kde končí mandáty a začínají náhradníci' },
+            { type: 'improved', text: 'U kandidátů ukazujeme, kolik mají procent průměru kandidátky (od 110 % se posouvají dopředu), místo podílu na hlasech strany' },
+            { type: 'improved', text: 'Hlasy kandidátů už neoznačujeme jako preferenční — v komunálních volbách dá křížek u strany hlas všem jejím kandidátům, proto mají všichni hlasy podobné' },
+            { type: 'fixed', text: 'Demo sčítání má hlasy kandidátů podle skutečnosti z roku 2022 — dřív v něm kandidáti přeskakovali pořadí mnohem častěji' },
+        ],
+    },
+    {
         version: '1.5.2',
         date: '2026-10-10',
         title: 'Rychlejší výsledky',

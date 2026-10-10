@@ -90,7 +90,8 @@ export function normalizeResults(json, council) {
                 rank: official && c[6] ? num(c[6]) : null,
             })),
         ])),
-        // hranice pro posun kandidáta preferenčními hlasy (110 % průměru)
+        // hranice pro posun kandidáta vpřed (110 % průměru na kandidáta);
+        // nepoužívá se, počítáme ji sami (compute.js rankCandidates)
         limits: Object.fromEntries(Object.entries(json.hranice || {}).map(([k, v]) => [k, num(v)])),
     };
 }

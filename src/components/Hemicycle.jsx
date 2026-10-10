@@ -4,7 +4,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { activeCouncil, partyMeta } from '../volby/council';
 import { seatList } from '../volby/model';
-import { fmtInt, fmtPct } from '../volby/format';
+import { fmtInt } from '../volby/format';
 import { Avatar } from './ui';
 
 const W = 230;
@@ -158,11 +158,11 @@ export default function Hemicycle({ model, highlight = null, onSelectPerson, cen
                             <div className="text-sm font-semibold text-neutral-900 truncate">{activeSeat.person.display}</div>
                             <div className="text-[11px] text-neutral-500 truncate">
                                 {partyMeta(activeSeat.partyId).short} · {activeSeat.person.n}. na listině
-                                {activeSeat.person.votes > 0 && ` · ${fmtInt(activeSeat.person.votes)} hl. (${fmtPct(activeSeat.person.pct)})`}
+                                {activeSeat.person.votes > 0 && ` · ${fmtInt(activeSeat.person.votes)} hl.`}
                             </div>
                         </div>
                         {activeSeat.person.jumped && (
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 shrink-0">↑ preference</span>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 shrink-0">↑ posun díky hlasům</span>
                         )}
                     </div>
                 ) : (

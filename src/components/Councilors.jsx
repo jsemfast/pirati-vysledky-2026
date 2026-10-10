@@ -1,14 +1,22 @@
 // Zvolení zastupitelé (odhad podle průběžných čísel, po vyhlášení oficiální).
 // Pirátská kandidátka má fotky (vlastní nebo z programydovoleb.cz), „na hraně" a celé
-// pořadí preferenčních hlasů; ostatní strany kompaktní seznam.
-import React, { useEffect, useMemo, useState } from 'react';
+// pořadí po posunu kandidátů nad 110 % průměru; ostatní strany kompaktní seznam.
+//
+// Hlasy kandidátů v KV nejsou preferenční hlasy jako ve sněmovních volbách —
+// křížek u strany dá hlas všem jejím kandidátům. Proto u kandidátů ukazujeme
+// místo podílu na hlasech strany (u 65 kandidátů vždy kolem 1,5 %) % průměru
+// na kandidáta: od 110 % se kandidát posouvá na začátek kandidátky.
+import React, { useEffect, useState } from 'react';
 import { partyMeta } from '../volby/council';
-import { fmtInt, fmtPct, mandatesLabel } from '../volby/format';
+import { fmtInt, mandatesLabel } from '../volby/format';
 import Hemicycle from './Hemicycle';
 import { Avatar, Card, PartyLogo, Pill, SectionTitle } from './ui';
 import { scrollBehavior } from '../utils/motion';
 
 const cardId = (p) => `cand-${p.partyId}-${p.n}`;
+
+// „244 hl. · 119 % průměru"
+const votesLabel = (person) => `${fmtInt(person.votes)} hl.${person.ofAvg !== null && person.ofAvg !== undefined ? ` · ${person.ofAvg} % průměru` : ''}`;
 
 function PersonCard({ person, hasVotes, focused }) {
     return (
@@ -24,8 +32,8 @@ function PersonCard({ person, hasVotes, focused }) {
                 <div className="text-[11px] text-neutral-500 truncate">{person.job || person.affiliation}</div>
                 <div className="mt-1 flex flex-wrap items-center gap-1">
                     <Pill>{person.n}. na listině</Pill>
-                    {hasVotes && <Pill tone="stone">{fmtInt(person.votes)} hl. · {fmtPct(person.pct)}</Pill>}
-                    {person.jumped && <Pill tone="green">↑ preferencemi</Pill>}
+                    {hasVotes && <Pill tone="stone">{votesLabel(person)}</Pill>}
+                    {person.jumped && <Pill tone="green">↑ posun díky hlasům</Pill>}
                 </div>
             </div>
         </div>
@@ -75,8 +83,8 @@ export function PirateCandidates({ model }) {
                             {hasVotes && (
                                 <div className="mt-1 flex flex-wrap items-center gap-1">
                                     <Pill tone={person.seat ? 'yellow' : 'stone'}>{person.seat ? 'má mandát' : 'bez mandátu'}{official ? '' : ' · odhad'}</Pill>
-                                    <Pill>{fmtInt(person.votes)} hl. · {fmtPct(person.pct)}</Pill>
-                                    {person.jumped && <Pill tone="green">↑ preferencemi</Pill>}
+                                    <Pill>{votesLabel(person)}</Pill>
+                                    {person.jumped && <Pill tone="green">↑ posun díky hlasům</Pill>}
                                 </div>
                             )}
                         </div>
@@ -99,11 +107,11 @@ export default function Councilors({ model }) {
     const oursNext = ours ? ours.list.filter((c) => !c.seat).slice(0, 3) : [];
     const others = model.parties.filter((p) => p.id !== oursId && p.seats > 0);
 
-    // Celá kandidátka seřazená podle preferenčních hlasů
-    const byVotes = useMemo(
-        () => (ours ? [...ours.list].sort((a, b) => b.votes - a.votes || a.n - b.n) : []),
-        [ours],
-    );
+    // Celá kandidátka v pořadí, ve kterém dostává mandáty: napřed kandidáti
+    // nad hranicí (podle hlasů), pak ostatní podle listiny — ne prosté
+    // seřazení podle hlasů (kandidát pod hranicí nepředběhne nikoho, i když
+    // má víc hlasů než lidé nad ním na listině)
+    const seatsOurs = oursElected.length;
 
     useEffect(() => {
         if (!focus) return;
@@ -171,27 +179,42 @@ export default function Councilors({ model }) {
 
                             <div className="mt-3 pt-3 border-t border-neutral-100">
                                 <button onClick={() => setShowAll((v) => !v)} className="py-2.5 -my-2.5 text-sm font-semibold text-[#000000] hover:underline">
-                                    {showAll ? 'Skrýt' : 'Zobrazit'} pořadí podle preferenčních hlasů
+                                    {showAll ? 'Skrýt' : 'Zobrazit'} celé pořadí kandidátky
                                 </button>
                                 {showAll && (
                                     <div className="mt-2">
-                                        {ours.limit !== null && (
-                                            <div className="text-[11px] text-neutral-500 mb-1">
-                                                Hranice pro posun vpřed: <b>{fmtInt(Math.ceil(ours.limit))}</b> hlasů (110 % průměru na kandidáta)
-                                            </div>
+                                        {ours.average !== null && (
+                                            <p className="text-[11px] leading-snug text-neutral-500 mb-2">
+                                                Mandáty jdou podle pořadí na listině. Kdo má aspoň o 10 % víc hlasů, než je průměr
+                                                na kandidáta ({fmtInt(ours.average)} hl.), tedy aspoň <b className="text-neutral-700">{fmtInt(Math.ceil(ours.limit))} hl.</b>,
+                                                posune se na začátek — mezi sebou podle počtu hlasů. Křížek u strany dá hlas všem
+                                                jejím kandidátům, proto mají hlasy podobné.
+                                            </p>
                                         )}
                                         <ol className="divide-y divide-neutral-100">
-                                            {byVotes.map((c, i) => (
-                                                <li key={c.n} className="flex items-center gap-2 py-1 text-sm">
-                                                    <span className="w-5 text-[11px] text-neutral-500 tabular-nums">{i + 1}.</span>
+                                            {ours.list.map((c, i) => (
+                                                <li
+                                                    key={c.n}
+                                                    className={`flex items-center gap-2 py-1 text-sm ${i === seatsOurs && i > 0 ? 'border-t-2 border-t-neutral-300' : ''}`}
+                                                >
+                                                    <span className="w-6 text-[11px] text-neutral-500 tabular-nums">{c.order}.</span>
                                                     <Avatar person={c} size={22} />
-                                                    <span className={`flex-1 truncate ${c.seat ? 'font-semibold text-neutral-900' : 'text-neutral-600'}`}>{c.display}</span>
+                                                    <span className={`flex-1 truncate ${c.seat ? 'font-semibold text-neutral-900' : 'text-neutral-600'}`}>
+                                                        {c.display}
+                                                        {c.jumped && <span className="ml-1 text-[10px] font-bold text-emerald-700">↑</span>}
+                                                    </span>
                                                     <span className="text-[11px] text-neutral-500 tabular-nums">#{c.n}</span>
-                                                    {c.preferred && <span className="text-[10px] font-bold text-emerald-700">nad hranicí</span>}
                                                     <span className="w-14 text-right tabular-nums text-xs">{fmtInt(c.votes)}</span>
+                                                    <span className={`w-11 text-right tabular-nums text-[11px] ${c.preferred ? 'font-bold text-emerald-700' : 'text-neutral-500'}`}>
+                                                        {c.ofAvg === null ? '–' : `${c.ofAvg} %`}
+                                                    </span>
                                                 </li>
                                             ))}
                                         </ol>
+                                        <div className="mt-1.5 text-[11px] text-neutral-500">
+                                            # = místo na listině · <span className="font-bold text-emerald-700">zeleně</span> % průměru u kandidátů nad hranicí 110 %
+                                            {seatsOurs > 0 && seatsOurs < ours.list.length && ' · čára = konec mandátů, pod ní náhradníci'}
+                                        </div>
                                     </div>
                                 )}
                             </div>

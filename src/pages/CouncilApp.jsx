@@ -417,7 +417,7 @@ export default function CouncilApp({ council }) {
             {model.hasVotes && <TurnoutCard snapshot={snapshot} results2022={statics.results2022} />}
             <div className="text-[11px] text-neutral-500 px-1 pb-2 leading-relaxed">
                 Zdroj: ČSÚ, volby.gov.cz. Mandáty a zvolení jsou do vyhlášení ČSÚ odhad podle zákona (5% klauzule,
-                d'Hondt, 10% preferenční hranice) — výpočet ověřený na výsledcích 2022. Loga a část fotek: programydovoleb.cz.
+                d'Hondt, posun kandidátů s aspoň 110 % průměru hlasů kandidátky) — výpočet ověřený na výsledcích 2022. Loga a část fotek: programydovoleb.cz.
             </div>
         </div>
     );

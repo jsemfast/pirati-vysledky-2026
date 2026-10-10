@@ -226,7 +226,8 @@ function AllyCard({ council, summary, lists, fresh }) {
                         </div>
                         {status?.votes !== null && status?.votes !== undefined && (
                             <div className="mt-2 text-[11px] text-neutral-500">
-                                Preferenční hlasy: <b className="text-neutral-800">{fmtInt(status.votes)}</b>
+                                Hlasy: <b className="text-neutral-800">{fmtInt(status.votes)}</b>
+                                {status.ofAvg !== null && status.ofAvg !== undefined && <> ({status.ofAvg} % průměru kandidátky)</>}
                                 {status.order !== null && status.order !== pc.n && <> · {status.order < pc.n ? 'posun' : 'pokles'} z {pc.n}. na {status.order}. místo</>}
                             </div>
                         )}
@@ -498,8 +499,9 @@ export default function Landing() {
                     <div>
                         <h2 className="font-display text-2xl tracking-wide text-black">Mandáty a zvolení</h2>
                         <p className="mt-1">
-                            Do vyhlášení ČSÚ je počítáme sami podle zákona: 5% klauzule, d'Hondt a 10% hranice pro
-                            preferenční hlasy. Výpočet sedí na všech výsledcích voleb 2022.
+                            Do vyhlášení ČSÚ je počítáme sami podle zákona: 5% klauzule, d'Hondt a posun kandidátů,
+                            kteří mají aspoň o 10 % víc hlasů, než je průměr na kandidáta jejich kandidátky. Výpočet
+                            sedí na všech výsledcích voleb 2022.
                         </p>
                     </div>
                     <div>

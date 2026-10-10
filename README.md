@@ -67,13 +67,13 @@ Konfigurace); jinde se karta koalice a režim mapy „Koalice" neukazují.
 - **Verze a automatické aktualizace** — po nasazení nové verze se otevřené
   stránky samy obnoví a jednou ukážou „Co je nové" (viz Verzování).
 - **Mandáty a zvolení** — do vyhlášení ČSÚ vlastní výpočet podle zákona
-  (5% klauzule s přepočteným základem, d'Hondt, 10% hranice preferenčních
-  hlasů); po vyhlášení oficiální čísla. Půlkruh zastupitelstva — klepnutím na
+  (5% klauzule s přepočteným základem, d'Hondt, posun kandidátů s aspoň
+  110 % průměru hlasů na kandidáta); po vyhlášení oficiální čísla. Půlkruh zastupitelstva — klepnutím na
   křeslo uvidíš, kdo na něm sedí.
 - **Piráti v centru** — hero karta s procenty, mandáty, změnou proti roku
   2022 (jen ve stejných sečtených okrscích), kolik hlasů chybí na další
   mandát a jaká je rezerva posledního. Karty zvolených s fotkami, „na hraně"
-  a pořadí podle preferenčních hlasů.
+  a celé pořadí kandidátky po posunu (v tom pořadí jdou mandáty i náhradníci).
 - **Koalice** — kolik má současná koalice, skládačka vlastní koalice a seznam
   všech minimálních většin (filtr „jen s Piráty").
 - **Mapa okrsků** — podíl Pirátů (pirátská žlutá škála), vítěz okrsku,
@@ -389,9 +389,31 @@ KV 2022 a porovná je s ČSÚ:
   kandidáti bez jediné chyby. Zbylých 27 jsou malé obce s přesnou shodou
   podílů, kterou zákon rozhoduje losem.
 
-Neintuitivní detail: hranice pro preferenční posun je **⌊průměr hlasů na
-kandidáta⌋ × 1,1** — ČSÚ zaokrouhluje průměr dolů (s přesným průměrem by
-v roce 2022 nesedělo ~1 100 kandidátů).
+Neintuitivní detail: hranice pro posun kandidáta je **⌊průměr hlasů na
+kandidáta⌋ × 1,1** — zákon chce průměr „vyjádřený celým číslem bez
+zaokrouhlení" (§ 45 odst. 4), tedy useknutý (s přesným průměrem by v roce
+2022 nesedělo ~1 100 kandidátů).
+
+### Hlasy kandidátů v komunálních volbách
+
+Nejsou to preferenční hlasy jako ve sněmovních volbách (zákon č. 491/2001 Sb.):
+
+- křížek u strany dá hlas **každému** jejímu kandidátovi (§ 40 odst. 2;
+  kandidátů je nejvýš tolik, kolik je mandátů), křížky u jednotlivých
+  kandidátů jiných stran ubírají hlasy z konce listiny označené strany,
+- hlasy strany = součet hlasů jejích kandidátů, takže kandidáti mají hlasy
+  podobné — v Praze 2022 medián 99 % průměru na kandidáta, lídr 112 %,
+  95 % kandidátů pod 115 %,
+- mandáty jdou podle listiny; kdo má aspoň 110 % ⌊průměru⌋, jde na začátek
+  (mezi sebou podle hlasů, při shodě podle listiny) — ostatní zůstávají
+  v pořadí listiny, i když mají víc hlasů než někdo nad nimi. Ve stejném
+  pořadí se stávají náhradníky (§ 45 odst. 5).
+
+Proto aplikace u kandidátů neukazuje podíl na hlasech strany (pole `%` od
+ČSÚ, u 65 kandidátů vždy kolem 1,5 %), ale **% průměru** (useknuté na celé
+procento, takže 110 % ⇔ posun) a celé pořadí kandidátky v pořadí podle
+zákona. Demo sčítání má hlasy kandidátů kalibrované na KV 2022
+([`candidateWeights`](src/volby/random.js)).
 
 ## Struktura
 

@@ -7,6 +7,10 @@
 //     kandidátů; při rovnosti podílů rozhoduje vyšší počet hlasů,
 //  3. uvnitř strany: kandidát s alespoň 110 % průměru hlasů na kandidáta
 //     („hranice") jde dopředu (seřazeni podle hlasů), ostatní podle listiny.
+// Hlasy kandidáta v KV nejsou „preferenční" jako ve sněmovních volbách:
+// křížek u strany dá hlas každému jejímu kandidátovi (§ 40 odst. 2), takže
+// mají všichni podobně (v Praze 2022 medián 99 % průměru, 95 % kandidátů
+// pod 115 %) a o posunu rozhoduje jen to, kdo má aspoň 110 % průměru.
 // Ověřeno na oficiálních výsledcích KV 2022 (Praha 3: mandáty i zvolení sedí).
 // Funkce jsou čisté — používá je UI i demo režim.
 
@@ -86,15 +90,17 @@ function indexById(rows) {
     return Object.fromEntries(rows.map((r) => [r.id, r]));
 }
 
-// Pořadí kandidátů jedné strany po uplatnění preferenčních hlasů.
+// Pořadí kandidátů jedné strany po přednostním posunu (§ 45 odst. 4) —
+// v tomhle pořadí dostávají mandáty a stávají se náhradníky.
 // Hranici počítáme vždy sami (pole `hranice` od ČSÚ nejde před volbami
 // ověřit a náš vzorec sedí na všech kandidátech KV 2022).
 export function rankCandidates(candidates, seats, { partyVotes } = {}) {
     const list = [...(candidates || [])].sort((a, b) => a.n - b.n);
     const votes = partyVotes ?? list.reduce((s, c) => s + c.votes, 0);
-    // ČSÚ počítá z průměru zaokrouhleného dolů (s přesným průměrem by
-    // v KV 2022 nesedělo ~1 100 kandidátů). Celočíselně: hlasy·10 ≥ ⌊průměr⌋·11
-    // — s 1,1 v plovoucí čárce by 100·1,1 = 110,00000000000001.
+    // Průměr „vyjádřený celým číslem bez zaokrouhlení" (§ 45 odst. 4), tj.
+    // useknutý — s přesným průměrem by v KV 2022 nesedělo ~1 100 kandidátů.
+    // Celočíselně: hlasy·10 ≥ ⌊průměr⌋·11 — s 1,1 v plovoucí čárce by
+    // 100·1,1 = 110,00000000000001.
     const base = list.length ? Math.floor(votes / list.length) : null;
     const preferred = votes > 0 && base !== null
         ? list.filter((c) => c.votes * 10 >= base * 11).sort((a, b) => b.votes - a.votes || a.n - b.n)
@@ -104,15 +110,21 @@ export function rankCandidates(candidates, seats, { partyVotes } = {}) {
     const order = [...preferred, ...list.filter((c) => !prefSet.has(c.n))];
     return {
         limit: Number.isFinite(hranice) ? hranice : null,
+        average: base || null,
         ranked: order.map((c, i) => ({
             ...c,
             order: i + 1,
             preferred: prefSet.has(c.n),
+            // % průměru na kandidáta, useknuté na celé procento: ≥ 110 právě
+            // tehdy, když kandidát přeskočí (zaokrouhlení by u 109,6 % ukázalo
+            // 110 % u někoho, kdo neprošel)
+            ofAvg: base ? Math.floor((c.votes * 100) / base) : null,
             seat: i < seats,
-            // přeskočil(a) díky preferencím — podle listiny by mandát neměl(a)
+            // přeskočil(a) díky hlasům — podle listiny by mandát neměl(a)
             jumped: prefSet.has(c.n) && i < seats && c.n > seats,
-            // podle listiny by mandát měl(a), ale preferencemi ho ztratil(a)
-            bumped: !prefSet.has(c.n) && i >= seats && c.n <= seats,
+            // podle listiny by mandát měl(a), ale o mandát přišel/přišla —
+            // i nad hranicí, když ho předběhli ještě silnější kandidáti
+            bumped: i >= seats && c.n <= seats,
         })),
     };
 }
@@ -130,7 +142,7 @@ export function computeOutcome(snapshot, { seats } = {}) {
     const councilors = {};
     for (const p of parties) {
         const cands = snapshot.candidates?.[p.id] || [];
-        const { ranked, limit } = rankCandidates(cands, seatsById[p.id], { partyVotes: p.votes });
+        const { ranked, limit, average } = rankCandidates(cands, seatsById[p.id], { partyVotes: p.votes });
         // Oficiální značky zvolení od ČSÚ mají přednost před naším výpočtem —
         // ale jen když sedí s počtem mandátů (formát sloupce šlo před volbami
         // ověřit jen z kódu prezentační aplikace, ne na živých datech)
@@ -151,7 +163,7 @@ export function computeOutcome(snapshot, { seats } = {}) {
                 c.order = i + 1;
             });
         }
-        councilors[p.id] = { ranked, limit };
+        councilors[p.id] = { ranked, limit, average };
     }
 
     return { official, alloc, seatsById, councilors, seatsTotal };

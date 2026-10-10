@@ -8,19 +8,19 @@
 // i v prohlížeči (záloha, jen zastupitelstva s Piráty) a v demu.
 import { councilByZastup, KV_BASE_URL } from '../councils.js';
 import { allocateSeats, computeOutcome } from './compute.js';
-import { gaussFrom, mulberry32 } from './random.js';
+import { candidateWeights, gaussFrom, mulberry32 } from './random.js';
 import { createJsonCache, createLimiter, normalizeResults, pathsFor, phaseOf, sleep } from './feed.js';
 
 export const OVERVIEW_VERSION = 1;
 
 // Piráti na kandidátce jiného uskupení (councils.js pirateCandidates):
-// preferenční hlasy a jestli by měli mandát (oficiálně, nebo náš odhad)
+// hlasy, % průměru kandidátky a jestli by měli mandát (oficiálně, nebo odhad)
 function pirateCandidatesOf(council, results) {
     if (!council.pirateCandidates?.length || !results.candidates) return null;
     const { councilors } = computeOutcome(results, { seats: results.seats });
     return council.pirateCandidates.map(({ list, n }) => {
         const c = councilors[list]?.ranked.find((x) => x.n === n);
-        return { list, n, votes: c?.votes ?? null, seat: c ? c.seat : null, order: c?.order ?? null };
+        return { list, n, votes: c?.votes ?? null, ofAvg: c?.ofAvg ?? null, seat: c ? c.seat : null, order: c?.order ?? null };
     });
 }
 
@@ -185,10 +185,9 @@ export function createOverviewDemoFeed({ councils, statics, durationMs = 150000,
             wobble: st.lists.map(() => gauss()),
             votes: Math.max(1000, st.votes2022) * (1.03 + 0.05 * gauss()),
             turnout: 42 + 6 * gauss(),
-            // preferenční hlasy jen pro kandidátky s Piráty z jiného uskupení
-            prefs: Object.fromEntries(c.pirateCandidates.map(({ list }) => [list, Array.from(
-                { length: st.lists.find((l) => l.id === list)?.candidates || c.seats },
-                (_, i) => Math.max(0.3, 1 + (i === 0 ? 0.4 : 0) + 0.25 * gauss()),
+            // hlasy kandidátů jen pro kandidátky s Piráty z jiného uskupení
+            prefs: Object.fromEntries(c.pirateCandidates.map(({ list }) => [list, candidateWeights(
+                st.lists.find((l) => l.id === list)?.candidates || c.seats, rand, gauss,
             )])),
         };
     });

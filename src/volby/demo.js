@@ -5,7 +5,7 @@
 import { allocateSeats, rankCandidates } from './compute.js';
 import { activeCouncil } from './council.js';
 import { SNAPSHOT_VERSION } from './feed.js';
-import { gaussFrom, mulberry32 } from './random.js';
+import { candidateWeights, gaussFrom, mulberry32 } from './random.js';
 
 export function createDemoFeed({ results2022, kandidati, durationMs = 150000, seed = Date.now() }) {
     const council = activeCouncil();
@@ -61,16 +61,12 @@ export function createDemoFeed({ results2022, kandidati, durationMs = 150000, se
     });
     const lastArrival = Math.max(...Object.values(arrival), 0);
 
-    // Váhy kandidátů: lídr táhne, s pořadím klesají, pár „preferenčních hvězd"
+    // Váhy kandidátů: realisticky blízko sebe (křížek u strany dá hlas všem),
+    // lídr o něco výš, občas silnější kandidát hlouběji na listině
     const weights = {};
     for (const lid of listIds) {
         const list = kandidati.parties[lid]?.candidates || [];
-        const stars = new Set([7 + Math.floor(rand() * 10), 12 + Math.floor(rand() * 15)]);
-        weights[lid] = list.map((c) => {
-            let w = ((c.n === 1 ? 2.6 : 1) / (1 + 0.04 * (c.n - 1))) * Math.exp(0.22 * gauss());
-            if (stars.has(c.n)) w *= 2.4;
-            return w;
-        });
+        weights[lid] = candidateWeights(list.length, rand, gauss);
     }
 
     function snapshotAt(now) {

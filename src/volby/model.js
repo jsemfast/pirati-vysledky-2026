@@ -59,9 +59,10 @@ export function buildModel(snapshot, { kandidati, results2022 }) {
         const regByN = new Map(regList.map((c) => [c.n, c]));
         const ranked = outcome.councilors[p.id]?.ranked?.length
             ? outcome.councilors[p.id].ranked
-            : regList.map((c, i) => ({ n: c.n, votes: 0, pct: 0, order: i + 1, seat: false, preferred: false, jumped: false, bumped: false }));
+            : regList.map((c, i) => ({ n: c.n, votes: 0, pct: 0, ofAvg: null, order: i + 1, seat: false, preferred: false, jumped: false, bumped: false }));
         councilors[p.id] = {
             limit: outcome.councilors[p.id]?.limit ?? null,
+            average: outcome.councilors[p.id]?.average ?? null,
             list: ranked.map((c) => {
                 const reg = regByN.get(c.n);
                 return {
